@@ -5,6 +5,7 @@ matplotlib
 scipy 
 python-louvain 
 pyvis
+streamlit
 requests
 wasmtime
 retrying

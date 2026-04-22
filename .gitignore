@@ -3,3 +3,4 @@ plan.md
 __pycache__
 *.wasm
 *.csv
+lib
