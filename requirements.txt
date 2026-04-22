@@ -1,0 +1,10 @@
+numpy
+pandas  
+networkx 
+matplotlib 
+scipy 
+python-louvain 
+pyvis
+requests
+wasmtime
+retrying
