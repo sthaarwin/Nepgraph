@@ -420,13 +420,30 @@ def tab_insights(cn, prices):
             )
 
         divider()
+
+        # Technical Indicators
+        st.sidebar.markdown("### Technical Indicators")
+        show_sma = st.sidebar.checkbox("Show 50/200 Day SMA", value=True)
+        show_bb = st.sidebar.checkbox("Show Bollinger Bands", value=False)
+
         top_stock = sorted_hubs[0][0] if sorted_hubs else None
         if top_stock and top_stock in prices.columns:
             sec_head(f"{top_stock} — Close Price")
             # Resample to weekly so the interactive chart doesn't lag on pan/zoom
             chart_df = prices[[top_stock]].dropna()
             if not chart_df.empty:
-                chart_df = chart_df.resample('W').last()
+                # chart_df = chart_df.resample('W').last()
+
+                if show_sma:
+                    chart_df['SMA_50'] = chart_df[top_stock].rolling(window=50).mean()
+                    chart_df['SMA_200'] = chart_df[top_stock].rolling(window=200).mean()
+                
+                if show_bb:
+                    window = 20
+                    chart_df['SMA_20'] = chart_df[top_stock].rolling(window=window).mean()
+                    chart_df['BB_Upper'] = chart_df['SMA_20'] + chart_df[top_stock].rolling(window=window).std() * 2
+                    chart_df['BB_Lower'] = chart_df['SMA_20'] - chart_df[top_stock].rolling(window=window).std() * 2
+
             st.line_chart(chart_df, height=160)
 
 
