@@ -96,6 +96,23 @@ COLORS = [
     "#4ade80",  # green
 ]
 
+st.sidebar.markdown("## NepGraph Controls")
+
+time_regime_map = {
+    "1 Year": 1,
+    "3 Years": 3,
+    "5 Years": 5,
+    "Max": 100, # Effectively no limit
+}
+time_regime_key = st.sidebar.radio(
+    "**Time Lookback**",
+    options=time_regime_map.keys(),
+    index=2, # Default to 5 years
+    help="How far back to calculate correlations. Shorter periods capture recent market dynamics, longer periods capture stable, long-term relationships."
+)
+_LOOKBACK_YEARS = time_regime_map[time_regime_key]
+
+
 def clr(comm_id: int) -> str:
     return COLORS[comm_id % len(COLORS)]
 
@@ -106,17 +123,18 @@ def hex_to_rgba(h: str, a: float) -> str:
 
 
 # ── Data / network helpers ────────────────────────────────────────────────────
-_LOOKBACK_YEARS = 5
-
 @st.cache_data(show_spinner=False)
-def load_data():
+def load_data(lookback_years):
     dm = DataManager(data_path="data/nepse_prices.csv")
     raw = dm.get_data()
 
-    # Trim to last 5 years (removes ~80 % of zero-padded rows)
+    # Trim to last N years
     raw.index = pd.to_datetime(raw.index)
-    cutoff = pd.Timestamp.today() - pd.DateOffset(years=_LOOKBACK_YEARS)
-    trimmed = raw[raw.index >= cutoff]
+    if lookback_years < 100: # Use 100 as 'Max' sentinel
+        cutoff = pd.Timestamp.today() - pd.DateOffset(years=lookback_years)
+        trimmed = raw[raw.index >= cutoff]
+    else:
+        trimmed = raw
 
     # Drop columns that are >40 % missing in this window, then fill gaps
     trimmed = trimmed.loc[:, trimmed.isna().mean() < 0.4]
@@ -315,7 +333,7 @@ def tab_network(cn):
 
     with col_g:
         sec_head("MST Network — Minimum Spanning Tree")
-        st.components.v1.html(html, height=600, scrolling=False)
+        st.components.v1.html(html, height=600)
 
     with col_l:
         sec_head("Communities")
@@ -409,7 +427,7 @@ def tab_insights(cn, prices):
             chart_df = prices[[top_stock]].dropna()
             if not chart_df.empty:
                 chart_df = chart_df.resample('W').last()
-            st.line_chart(chart_df, height=160, use_container_width=True)
+            st.line_chart(chart_df, height=160)
 
 
 @st.fragment
@@ -465,6 +483,26 @@ def tab_portfolio(cn, prices):
             unsafe_allow_html=True,
         )
 
+        # Correlation analysis
+        corr_matrix = cn.get_correlation_matrix()
+        if corr_matrix is not None and all(s in corr_matrix.columns for s in portfolio):
+            portfolio_corr = corr_matrix.loc[portfolio, portfolio]
+            
+            # Get upper triangle of the correlation matrix (excluding the diagonal)
+            upper_tri = portfolio_corr.where(np.triu(np.ones(portfolio_corr.shape), k=1).astype(bool))
+            
+            # Calculate the average pairwise correlation
+            avg_corr = upper_tri.stack().mean()
+
+            if avg_corr > 0.6:
+                st.markdown(
+                    f'<div class="box-warn" style="margin-top: 1rem;">'
+                    f'⚠️ <b>High Risk:</b> These stocks have an average pairwise correlation of <b>{avg_corr:.2f}</b>. '
+                    f'A drop in one will likely impact the others.'
+                    f'</div>',
+                    unsafe_allow_html=True
+                )
+
         # Per-community breakdown
         for cid, members in sorted(comm_map.items(), key=lambda x: -len(x[1])):
             c      = clr(cid)
@@ -498,13 +536,59 @@ def tab_portfolio(cn, prices):
             # Resample to weekly so the interactive chart doesn't lag on pan/zoom
             if not chart_df.empty:
                 chart_df = chart_df.resample('W').last()
-            st.line_chart(chart_df, height=220, use_container_width=True)
+            st.line_chart(chart_df, height=220)
+
+
+        # Backtester
+        divider()
+        sec_head("Portfolio Backtester")
+        
+        backtest_years = st.select_slider(
+            "Investment Horizon (Years)",
+            options=[1, 2, 3, 4, 5],
+            value=3
+        )
+        
+        initial_investment = 100_000
+        
+        # Filter prices for the backtest period
+        cutoff_date = prices.index[-1] - pd.DateOffset(years=backtest_years)
+        backtest_prices = prices[prices.index >= cutoff_date]
+        
+        if not backtest_prices.empty and all(s in backtest_prices.columns for s in portfolio):
+            portfolio_prices = backtest_prices[portfolio]
+            
+            # Normalize prices to the start of the backtest period
+            norm_prices = portfolio_prices / portfolio_prices.iloc[0]
+            
+            # Equal weight investment
+            num_stocks = len(portfolio)
+            investment_per_stock = initial_investment / num_stocks
+            
+            # Calculate the value of each stock over time
+            position_values = norm_prices * investment_per_stock
+            
+            # Calculate total portfolio value
+            portfolio_value = position_values.sum(axis=1)
+            
+            start_val = portfolio_value.iloc[0]
+            end_val = portfolio_value.iloc[-1]
+            
+            st.line_chart(portfolio_value, height=200)
+            
+            c1, c2, c3 = st.columns(3)
+            c1.metric("Initial Investment", f"Rs. {start_val:,.0f}")
+            c2.metric("Final Value", f"Rs. {end_val:,.0f}")
+            
+            # Calculate percentage gain/loss
+            pct_change = ((end_val - start_val) / start_val) * 100
+            c3.metric("Total Return", f"{pct_change:.2f}%")
 
 
 # ── Main ──────────────────────────────────────────────────────────────────────
 def main():
     with st.spinner("Loading market data…"):
-        prices = load_data()
+        prices = load_data(_LOOKBACK_YEARS)
 
     with st.spinner("Building MST network…"):
         cn = build_network(prices)
