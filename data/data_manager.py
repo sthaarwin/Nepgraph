@@ -7,95 +7,7 @@ from datetime import date, datetime, timedelta
 
 ROOT_URL = 'https://www.nepalstock.com'
 
-try:
-    from wasmtime import Store, Module, Instance
-    from retrying import retry
-    import requests
-    from urllib3 import disable_warnings
-    disable_warnings()
-except ImportError as e:
-    raise ImportError(f"Missing dependencies: {e}")
 
-
-WASM_FILE = os.path.join(os.path.dirname(__file__), '..', 'scraper', 'nepse_scraper', 'nepse.wasm')
-
-
-class TokenParser:
-    def __init__(self):
-        self.store = Store()
-        if not os.path.exists(WASM_FILE):
-            raise FileNotFoundError(f"WASM file not found at: {WASM_FILE}")
-        module = Module.from_file(self.store.engine, WASM_FILE)
-        instance = Instance(self.store, module, [])
-        self.cdx = instance.exports(self.store)["cdx"]
-        self.rdx = instance.exports(self.store)["rdx"]
-        self.bdx = instance.exports(self.store)["bdx"]
-        self.ndx = instance.exports(self.store)["ndx"]
-        self.mdx = instance.exports(self.store)["mdx"]
-
-    def parse_token_response(self, token_response):
-        n = self.cdx(self.store, token_response['salt1'], token_response['salt2'], token_response['salt3'], token_response['salt4'], token_response['salt5'])
-        l = self.rdx(self.store, token_response['salt1'], token_response['salt2'], token_response['salt4'], token_response['salt3'], token_response['salt5'])
-        o = self.bdx(self.store, token_response['salt1'], token_response['salt2'], token_response['salt4'], token_response['salt3'], token_response['salt5'])
-        p = self.ndx(self.store, token_response['salt1'], token_response['salt2'], token_response['salt4'], token_response['salt3'], token_response['salt5'])
-        q = self.mdx(self.store, token_response['salt1'], token_response['salt2'], token_response['salt4'], token_response['salt3'], token_response['salt5'])
-        
-        access_token = token_response['accessToken']
-        refresh_token = token_response['refreshToken']
-        
-        parsed_access = access_token[0:n] + access_token[n+1:l] + access_token[l+1:o] + access_token[o+1:p] + access_token[p+1:q] + access_token[q+1:]
-        
-        return (parsed_access, token_response)
-
-
-class NepseAPI:
-    def __init__(self):
-        self.token_parser = TokenParser()
-        self.token_url = ROOT_URL + '/api/authenticate/prove'
-        self.headers = {
-            'Host': 'www.nepalstock.com',
-            'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36',
-            'Accept': 'application/json, text/plain, */*',
-        }
-        self._cached_token = None
-
-    @retry(wait_fixed=2000, stop_max_attempt_number=5)
-    def _get_valid_token(self):
-        token_response = requests.get(self.token_url, headers=self.headers, verify=False).json()
-        for salt_index in range(1, 6):
-            token_response[f'salt{salt_index}'] = int(token_response[f'salt{salt_index}'])
-        return self.token_parser.parse_token_response(token_response)
-
-    def get_valid_token(self):
-        if self._cached_token is None:
-            self._cached_token = self._get_valid_token()
-        return self._cached_token[0]
-
-    def get_all_securities(self):
-        token = self.get_valid_token()
-        auth_headers = {'Authorization': f'Salter {token}', **self.headers}
-        
-        resp = requests.get(
-            f'{ROOT_URL}/api/nots/security',
-            headers=auth_headers,
-            verify=False,
-            timeout=30
-        )
-        resp.raise_for_status()
-        return resp.json()
-
-    def get_price_history(self, ticker_id):
-        token = self.get_valid_token()
-        auth_headers = {'Authorization': f'Salter {token}', **self.headers}
-        
-        resp = requests.get(
-            f'{ROOT_URL}/api/nots/market/graphdata/{ticker_id}',
-            headers=auth_headers,
-            verify=False,
-            timeout=30
-        )
-        resp.raise_for_status()
-        return resp.json()
 
 
 class DataManager:
@@ -103,7 +15,6 @@ class DataManager:
         self.data_path = data_path
         self.raw_data = None
         self.log_returns = None
-        self.nepse = NepseAPI()
 
     def get_data(self, tickers=None, start_date=None, end_date=None, force_fetch=False):
         if not force_fetch and os.path.exists(self.data_path):
@@ -113,55 +24,51 @@ class DataManager:
             print("Data loaded successfully from CSV.")
             return self.raw_data
 
+        print("Local data not found or `force_fetch` is True. Fetching from local repo...")
+        return self._fetch_from_local_repo(tickers, start_date, end_date)
+
+    def _fetch_from_local_repo(self, tickers, start_date, end_date):
+        repo_path = os.path.join(os.path.dirname(__file__), 'nepse-data', 'data', 'company-wise')
         if tickers is None:
-            print("Error: Ticker list must be provided to fetch new data.")
-            return None
-
-        print("Local data not found or `force_fetch` is True. Fetching from NEPSE...")
-        
-        try:
-            securities = self.nepse.get_all_securities()
-            symbol_to_id = {s['symbol']: s['id'] for s in securities}
-        except Exception as e:
-            print(f"Failed to get securities: {e}")
-            print("Creating dummy data instead...")
-            return self._create_dummy(tickers)
-
-        return self._fetch_historical_data(tickers, symbol_to_id, start_date, end_date)
-
-    def _fetch_historical_data(self, tickers, symbol_to_id, start_date, end_date):
-        print(f"Fetching historical data for {len(tickers)} tickers...")
+            tickers = [f.split('.')[0] for f in os.listdir(repo_path) if f.endswith('.csv')]
+            
+        print(f"Fetching data from local repo for {len(tickers)} tickers...")
         
         all_data = []
         for i, ticker in enumerate(tickers):
             ticker = ticker.upper()
-            if ticker not in symbol_to_id:
-                print(f"Ticker {ticker} not found in securities")
-                continue
+            csv_file = os.path.join(repo_path, f"{ticker}.csv")
             
+            if not os.path.exists(csv_file):
+                print(f"Ticker {ticker} CSV not found in {repo_path}")
+                continue
+                
             try:
                 print(f"({i+1}/{len(tickers)}) Fetching {ticker}...")
-                sec_id = symbol_to_id[ticker]
-                history = self.nepse.get_price_history(sec_id)
-                
-                if history and len(history) > 0:
-                    df = pd.DataFrame(history)
-                    if 'x' in df.columns and 'y' in df.columns:
-                        df['date'] = pd.to_datetime(df['x'], unit='ms').dt.date
-                        df = df[['date', 'y']]
-                        df.rename(columns={'y': ticker}, inplace=True)
-                        all_data.append(df.set_index('date'))
-                time.sleep(0.5)
+                df = pd.read_csv(csv_file)
+                if 'published_date' in df.columns and 'close' in df.columns:
+                    df['date'] = pd.to_datetime(df['published_date']).dt.date
+                    df = df[['date', 'close']]
+                    df.rename(columns={'close': ticker}, inplace=True)
+                    df.set_index('date', inplace=True)
+                    df = df[~df.index.duplicated(keep='last')]
+                    all_data.append(df)
             except Exception as e:
                 print(f"Could not fetch data for {ticker}. Reason: {e}")
 
         if not all_data:
-            print("No data was fetched. Creating dummy data instead...")
+            print("No data was fetched from local repo. Creating dummy data instead...")
             return self._create_dummy(tickers)
 
         combined_df = pd.concat(all_data, axis=1)
-        combined_df.ffill(inplace=True)
+        combined_df.sort_index(inplace=True)
         combined_df.bfill(inplace=True)
+        combined_df.ffill(inplace=True)
+
+        if start_date:
+            combined_df = combined_df[combined_df.index >= pd.to_datetime(start_date).date()]
+        if end_date:
+            combined_df = combined_df[combined_df.index <= pd.to_datetime(end_date).date()]
 
         self.raw_data = combined_df
         print("Historical data fetched and cleaned successfully.")
@@ -202,8 +109,11 @@ class DataManager:
 
 
 if __name__ == '__main__':
-    TARGET_TICKERS = ['NABIL', 'NICA', 'HDL', 'CIT', 'UPPER', 'GBIME', 'SCB', 'EBL']
+    TARGET_TICKERS = None
     DATA_FILE = 'data/nepse_prices.csv'
+    
+    # We must ensure creating directory if running from non-root
+    os.makedirs(os.path.dirname(DATA_FILE), exist_ok=True)
     
     manager = DataManager(data_path=DATA_FILE)
     data = manager.get_data(tickers=TARGET_TICKERS, force_fetch=False)

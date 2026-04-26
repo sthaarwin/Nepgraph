@@ -4,3 +4,4 @@ __pycache__
 *.wasm
 *.csv
 lib
+nepse-data
