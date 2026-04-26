@@ -76,8 +76,9 @@ st.markdown("""
 /* Thin divider */
 .div { height: 1px; background: rgba(255,255,255,0.07); margin: 1rem 0; }
 
-/* Remove white border from pyvis iframe */
-iframe { border: none !important; background: transparent !important; }
+/* Remove white border from pyvis iframe & components */
+iframe { border: 0 !important; outline: 0 !important; box-shadow: none !important; }
+[data-testid="stIFrame"], [data-testid="stHtml"] { border: 0 !important; outline: 0 !important; background: transparent !important; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -176,7 +177,7 @@ def get_normalised_prices(_prices_hash, prices):
 @st.cache_data(show_spinner=False)
 def get_pyvis_html(_cn_id, nodes_data, edges_data, communities_map):
     """Build and cache the pyvis HTML so it isn't rebuilt on every render."""
-    net = Network(height="560px", bgcolor="#0f172a", font_color="#cbd5e1", notebook=True)
+    net = Network(height="100%", width="100%", bgcolor="#0f172a", font_color="#cbd5e1", notebook=True)
 
     for nid, size, color, border_clr, label in nodes_data:
         net.add_node(
@@ -221,6 +222,41 @@ def get_pyvis_html(_cn_id, nodes_data, edges_data, communities_map):
         html = f.read()
     os.unlink(tmp_name)
 
+    # Hover-bound physics: physics is only active when mouse is over the graph. 
+    # This prevents the pyvis engine from starving CPU when user is dragging line charts in other tabs.
+    hover_js = """
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        var ready = setInterval(function() {
+            if (typeof network === 'undefined') return;
+            clearInterval(ready);
+            var container = document.getElementById('mynetwork');
+            if (container) {
+                container.addEventListener('mouseenter', function() {
+                    network.setOptions({ physics: { enabled: true } });
+                });
+                container.addEventListener('mouseleave', function() {
+                    network.setOptions({ physics: { enabled: false } });
+                });
+            }
+        }, 200);
+    });
+    </script>
+    """
+    html = html.replace("</body>", hover_js + "\n</body>")
+    
+    # Force body to have no margins and be dark, and remove the hardcoded border
+    import re
+    html = re.sub(r'border\s*:\s*1px\s+solid\s+lightgray\s*;?', 'border: 0 !important;', html)
+    css_inject = """
+    <style>
+    body, html { padding: 0 !important; margin: 0 !important; border: 0 !important; outline: 0 !important; background-color: #0f172a !important; overflow: hidden !important; }
+    #mynetwork { border: 0 !important; outline: 0 !important; width: 100vw !important; height: 100vh !important; }
+    canvas { border: 0 !important; outline: 0 !important; }
+    * { border: 0 !important; outline: 0 !important; }
+    </style>
+    """
+    html = html.replace("</head>", css_inject + "</head>")
     return html
 
 
@@ -279,7 +315,7 @@ def tab_network(cn):
 
     with col_g:
         sec_head("MST Network — Minimum Spanning Tree")
-        st.components.v1.html(html, height=580)
+        st.components.v1.html(html, height=600, scrolling=False)
 
     with col_l:
         sec_head("Communities")
@@ -369,7 +405,11 @@ def tab_insights(cn, prices):
         top_stock = sorted_hubs[0][0] if sorted_hubs else None
         if top_stock and top_stock in prices.columns:
             sec_head(f"{top_stock} — Close Price")
-            st.line_chart(prices[[top_stock]].dropna(), height=160, use_container_width=True)
+            # Resample to weekly so the interactive chart doesn't lag on pan/zoom
+            chart_df = prices[[top_stock]].dropna()
+            if not chart_df.empty:
+                chart_df = chart_df.resample('W').last()
+            st.line_chart(chart_df, height=160, use_container_width=True)
 
 
 @st.fragment
@@ -455,6 +495,9 @@ def tab_portfolio(cn, prices):
                 {s: norm_dict[s] for s in portfolio if s in norm_dict},
                 index=pd.to_datetime(dates),
             )
+            # Resample to weekly so the interactive chart doesn't lag on pan/zoom
+            if not chart_df.empty:
+                chart_df = chart_df.resample('W').last()
             st.line_chart(chart_df, height=220, use_container_width=True)
 
 
@@ -478,7 +521,10 @@ def main():
     with c1: stat_card("Stocks", cn.G.number_of_nodes())
     with c2: stat_card("Communities", len(communities))
     with c3: stat_card("Modularity", f"{get_modularity(id(cn), cn):.3f}")
-    with c4: stat_card("Date Range", f"{prices.index[0]} → {prices.index[-1]}")
+    with c4: 
+        d1 = pd.to_datetime(prices.index[0]).strftime("%b %Y")
+        d2 = pd.to_datetime(prices.index[-1]).strftime("%b %Y")
+        stat_card("Date Range", f"{d1} → {d2}")
 
     divider()
 
