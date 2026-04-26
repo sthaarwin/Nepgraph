@@ -12,7 +12,11 @@ ROOT_URL = 'https://www.nepalstock.com'
 
 class DataManager:
     def __init__(self, data_path='data/nepse_prices.csv'):
-        self.data_path = data_path
+        if not os.path.isabs(data_path):
+            base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+            self.data_path = os.path.join(base_dir, data_path)
+        else:
+            self.data_path = data_path
         self.raw_data = None
         self.log_returns = None
 
@@ -73,6 +77,7 @@ class DataManager:
         self.raw_data = combined_df
         print("Historical data fetched and cleaned successfully.")
         
+        os.makedirs(os.path.dirname(self.data_path), exist_ok=True)
         self.raw_data.to_csv(self.data_path)
         print(f"Data saved to {self.data_path}")
             

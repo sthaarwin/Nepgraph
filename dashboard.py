@@ -129,7 +129,7 @@ def main():
         portfolio = st.multiselect(
             "Select stocks in your portfolio:",
             available,
-            default=['NABIL', 'SCB']
+            default=['ADBL', 'AHPC']
         )
         
         if len(portfolio) > 1:
