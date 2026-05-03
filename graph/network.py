@@ -15,6 +15,7 @@ class CorrelationNetwork:
         self.G = None
         self.mst = None
         self.communities = None
+        self._centrality = None
 
     def calculate_log_returns(self, price_data=None):
         if price_data is not None:
@@ -28,6 +29,9 @@ class CorrelationNetwork:
         return self.log_returns
 
     def get_correlation_matrix(self, method='pearson'):
+        if self.corr_matrix is not None:
+            return self.corr_matrix
+        
         if self.log_returns is None:
             raise ValueError("Log returns not calculated. Call calculate_log_returns first.")
         
@@ -40,6 +44,9 @@ class CorrelationNetwork:
         return self.corr_matrix
 
     def get_distance_matrix(self):
+        if self.distance_matrix is not None:
+            return self.distance_matrix
+        
         if self.corr_matrix is None:
             self.get_correlation_matrix()
         
@@ -82,6 +89,14 @@ class CorrelationNetwork:
         return mst
 
     def get_louvain_communities(self):
+        if self.communities is not None:
+            communities = {}
+            for node, comm_id in self.communities.items():
+                if comm_id not in communities:
+                    communities[comm_id] = []
+                communities[comm_id].append(node)
+            return communities
+        
         if self.G is None:
             try:
                 self.build_mst()
@@ -125,6 +140,9 @@ class CorrelationNetwork:
         return mod
 
     def get_centrality(self):
+        if self._centrality is not None:
+            return self._centrality
+        
         if self.G is None:
             try:
                 self.build_mst()
@@ -155,6 +173,7 @@ class CorrelationNetwork:
         except Exception as e:
             result['eigenvector'] = {n: 0 for n in self.G.nodes()}
         
+        self._centrality = result
         return result
 
     def summary(self):

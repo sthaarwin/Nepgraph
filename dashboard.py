@@ -303,7 +303,7 @@ def get_pyvis_html(_cn_id, nodes_data, edges_data, communities_map):
     });
     </script>
     """
-    html = html.replace("</body>", hover_js + "\n</body>")
+    html = html.replace("</body>", "</body>")
     
     # Force body to have no margins and be dark, and remove the hardcoded border
     import re
