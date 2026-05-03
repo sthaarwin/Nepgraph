@@ -4,8 +4,6 @@
 
 NepGraph identifies organic "hidden communities" in the Nepal Stock Exchange (NEPSE) based on price movement correlation, revealing market structures invisible through traditional sector labels.
 
-![NepGraph Dashboard](https://via.placeholder.com/800x400?text=NepGraph+Dashboard)
-
 ## Features
 
 - **Interactive Network Map** - Draggable, zoomable MST visualization showing stock relationships
