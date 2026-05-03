@@ -389,6 +389,18 @@ def tab_network(cn):
             'Node size → Eigenvector<br>Edge width → Correlation</span>',
             unsafe_allow_html=True,
         )
+        st.markdown(r"""
+        <div style="background:rgba(56,189,248,0.05);border:1px solid rgba(56,189,248,0.15);border-radius:6px;padding:0.6rem 0.8rem;margin-top:0.5rem;">
+        <b style="color:#38bdf8;font-size:0.75rem;">ALGORITHM</b><br>
+        <span style="color:#94a3b8;font-size:0.7rem;">
+        1) Log returns: r<tsub>t</tsub> = ln(P<tsub>t</tsub>/P<tsub>t-1</tsub>) &nbsp;|&nbsp;
+        2) Pearson correlation &nbsp;|&nbsp;
+        3) Distance: d = sqrt(2(1-ρ)) &nbsp;|&nbsp;
+        4) MST (Kruskal) &nbsp;|&nbsp;
+        5) Louvain (modularity maximization)
+        </span>
+        </div>
+        """, unsafe_allow_html=True)
 
 
 def tab_insights(cn, prices):
@@ -748,6 +760,9 @@ def tab_portfolio(cn, prices):
 
 # ── Main ──────────────────────────────────────────────────────────────────────
 def main():
+    import time
+    start_time = time.time()
+
     with st.spinner("Loading market data…"):
         prices = load_data(_LOOKBACK_YEARS)
     
@@ -762,6 +777,7 @@ def main():
         st.stop()
 
     communities = cn.get_louvain_communities()
+    compute_time = time.time() - start_time
 
     # ── Header ────────────────────────────────────────────────────────────────
     st.markdown("## 📊 NepGraph")
@@ -769,14 +785,17 @@ def main():
 
     divider()
 
-    c1, c2, c3, c4 = st.columns(4, gap="small")
+    c1, c2, c3, c4, c5 = st.columns(5, gap="small")
     with c1: stat_card("Stocks", cn.G.number_of_nodes())
     with c2: stat_card("Communities", len(communities))
-    with c3: stat_card("Modularity", f"{get_modularity(id(cn), cn):.3f}")
+    with c3: 
+        mod = get_modularity(id(cn), cn)
+        stat_card("Modularity", f"{mod:.3f}", "Q > 0.4 = good")
     with c4: 
         d1 = pd.to_datetime(prices.index[0]).strftime("%b %Y")
         d2 = pd.to_datetime(prices.index[-1]).strftime("%b %Y")
         stat_card("Date Range", f"{d1} → {d2}")
+    with c5: stat_card("Compute", f"{compute_time:.2f}s", "wall clock")
 
     divider()
 
