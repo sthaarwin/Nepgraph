@@ -98,6 +98,11 @@ COLORS = [
 
 st.sidebar.markdown("## NepGraph Controls")
 
+if st.sidebar.button("↻ Refresh Data"):
+    st.cache_data.clear()
+    st.cache_resource.clear()
+    st.rerun()
+
 time_regime_map = {
     "1 Year": 1,
     "3 Years": 3,
@@ -112,6 +117,11 @@ time_regime_key = st.sidebar.radio(
 )
 _LOOKBACK_YEARS = time_regime_map[time_regime_key]
 
+st.sidebar.markdown("---")
+st.sidebar.markdown("### Technical Indicators")
+show_sma = st.sidebar.checkbox("Show 50/200 Day SMA", value=True)
+show_bb = st.sidebar.checkbox("Show Bollinger Bands", value=False)
+
 
 def clr(comm_id: int) -> str:
     return COLORS[comm_id % len(COLORS)]
@@ -125,50 +135,65 @@ def hex_to_rgba(h: str, a: float) -> str:
 # ── Data / network helpers ────────────────────────────────────────────────────
 @st.cache_data(show_spinner=False)
 def load_data(lookback_years):
-    dm = DataManager(data_path="data/nepse_prices.csv")
-    raw = dm.get_data()
+    try:
+        dm = DataManager(data_path="data/nepse_prices.csv")
+        raw = dm.get_data()
+        
+        if raw is None or raw.empty:
+            raise ValueError("No data loaded. Please check data/nepse_prices.csv")
 
-    # Trim to last N years
-    raw.index = pd.to_datetime(raw.index)
-    if lookback_years < 100: # Use 100 as 'Max' sentinel
-        cutoff = pd.Timestamp.today() - pd.DateOffset(years=lookback_years)
-        trimmed = raw[raw.index >= cutoff]
-    else:
-        trimmed = raw
+        raw.index = pd.to_datetime(raw.index)
+        if lookback_years < 100:
+            cutoff = pd.Timestamp.today() - pd.DateOffset(years=lookback_years)
+            trimmed = raw[raw.index >= cutoff]
+        else:
+            trimmed = raw
 
-    # Drop columns that are >40 % missing in this window, then fill gaps
-    trimmed = trimmed.loc[:, trimmed.isna().mean() < 0.4]
-    trimmed = trimmed.ffill().bfill().astype('float32')
-    return trimmed
+        trimmed = trimmed.loc[:, trimmed.isna().mean() < 0.4]
+        
+        if trimmed.empty:
+            raise ValueError(f"No stocks with sufficient data for {lookback_years} year lookback")
+        
+        trimmed = trimmed.ffill().bfill().astype('float32')
+        return trimmed
+    except Exception as e:
+        st.error(f"Data loading error: {e}")
+        return pd.DataFrame()
 
 
 @st.cache_resource(show_spinner=False)
 def build_network(_prices):
-    prices = _prices.astype('float64')
+    try:
+        if _prices.empty:
+            raise ValueError("Empty price data")
+        
+        prices = _prices.astype('float64')
+        prices = prices.loc[:, prices.std() > 0]
+        prices = prices.loc[:, prices.nunique() >= 30]
 
-    # Drop constant or near-constant columns — they produce NaN correlations
-    prices = prices.loc[:, prices.std() > 0]
-    prices = prices.loc[:, prices.nunique() >= 30]
+        if prices.shape[1] < 2:
+            raise ValueError("Not enough valid stocks for analysis")
 
-    cn = CorrelationNetwork()
-    cn.calculate_log_returns(prices)
+        cn = CorrelationNetwork()
+        cn.calculate_log_returns(prices)
 
-    # Drop any column whose full log-return series is NaN or zero-variance
-    if cn.log_returns is not None:
-        cn.log_returns = cn.log_returns.dropna(axis=1, how='all')
-        cn.log_returns = cn.log_returns.loc[:, cn.log_returns.std() > 0]
-        cn.price_data  = prices[cn.log_returns.columns]
+        if cn.log_returns is not None:
+            cn.log_returns = cn.log_returns.dropna(axis=1, how='all')
+            cn.log_returns = cn.log_returns.loc[:, cn.log_returns.std() > 0]
+            cn.price_data  = prices[cn.log_returns.columns]
 
-    cn.get_correlation_matrix()
-    cn.get_distance_matrix()
+        cn.get_correlation_matrix()
+        cn.get_distance_matrix()
 
-    # Fill any residual NaN in the distance matrix (e.g. perfect correlation = 0 dist)
-    if cn.distance_matrix is not None:
-        cn.distance_matrix = cn.distance_matrix.fillna(2.0)
+        if cn.distance_matrix is not None:
+            cn.distance_matrix = cn.distance_matrix.fillna(2.0)
 
-    cn.build_mst()
-    cn.get_louvain_communities()
-    return cn
+        cn.build_mst()
+        cn.get_louvain_communities()
+        return cn
+    except Exception as e:
+        st.error(f"Network build error: {e}")
+        return None
 
 
 @st.cache_resource(show_spinner=False)
@@ -180,6 +205,11 @@ def get_centrality(_cn):
 @st.cache_data(show_spinner=False)
 def get_modularity(_cn_id, _cn):
     return _cn.get_modularity()
+
+
+@st.cache_data(show_spinner=False)
+def get_anomalies(_cn_id, _cn):
+    return _cn.get_anomalies()
 
 
 @st.cache_data(show_spinner=False)
@@ -195,7 +225,7 @@ def get_normalised_prices(_prices_hash, prices):
 @st.cache_data(show_spinner=False)
 def get_pyvis_html(_cn_id, nodes_data, edges_data, communities_map):
     """Build and cache the pyvis HTML so it isn't rebuilt on every render."""
-    net = Network(height="100%", width="100%", bgcolor="#0f172a", font_color="#cbd5e1", notebook=True)
+    net = Network(height="100%", width="100%", bgcolor="#0f172a", font_color="#cbd5e1", notebook=True, cdn_resources='remote')
 
     for nid, size, color, border_clr, label in nodes_data:
         net.add_node(
@@ -333,7 +363,10 @@ def tab_network(cn):
 
     with col_g:
         sec_head("MST Network — Minimum Spanning Tree")
-        st.components.v1.html(html, height=600)
+        
+        import base64
+        html_b64 = base64.b64encode(html.encode('utf-8')).decode('utf-8')
+        st.markdown(f'<iframe src="data:text/html;base64,{html_b64}" width="100%" height="600" style="border:none;border-radius:8px;"></iframe>', unsafe_allow_html=True)
 
     with col_l:
         sec_head("Communities")
@@ -421,11 +454,6 @@ def tab_insights(cn, prices):
 
         divider()
 
-        # Technical Indicators
-        st.sidebar.markdown("### Technical Indicators")
-        show_sma = st.sidebar.checkbox("Show 50/200 Day SMA", value=True)
-        show_bb = st.sidebar.checkbox("Show Bollinger Bands", value=False)
-
         top_stock = sorted_hubs[0][0] if sorted_hubs else None
         if top_stock and top_stock in prices.columns:
             sec_head(f"{top_stock} — Close Price")
@@ -445,6 +473,82 @@ def tab_insights(cn, prices):
                     chart_df['BB_Lower'] = chart_df['SMA_20'] - chart_df[top_stock].rolling(window=window).std() * 2
 
             st.line_chart(chart_df, height=160)
+
+
+def tab_anomalies(cn):
+    anomalies = get_anomalies(id(cn), cn)
+    
+    filtered = [a for a in anomalies if a['is_anomaly']]
+    unknown = [a for a in anomalies if a['official_sector'] == "Unknown"]
+    
+    col_h, col_a = st.columns([2, 1], gap="large")
+    
+    with col_h:
+        sec_head("Anomaly Detection — Stocks Trading Outside Their Sector")
+        st.markdown(
+            '<div class="box-info" style="margin-bottom:1rem;">'
+            '<b>Hidden Links:</b> These stocks are grouped by correlation with stocks from <i>different</i> official sectors. '
+            'This may indicate non-obvious market relationships (e.g., Hydro stocks trading with Finance companies).'
+            '</div>',
+            unsafe_allow_html=True
+        )
+        
+        if not filtered:
+            st.markdown(
+                '<div class="box-success">No significant anomalies detected. '
+                'Most stocks are trading with their expected sector peers.</div>',
+                unsafe_allow_html=True
+            )
+        else:
+            st.markdown(f"**{len(filtered)} hidden-link anomalies detected**:")
+            
+            for a in filtered[:15]:
+                c = clr(a['community'])
+                with st.expander(f"**{a['ticker']}** — {a['official_sector']} → {a['majority_sector']} ({a['sector_match_pct']:.0f}% match)"):
+                    st.markdown(f"**Community:** {a['community']} · **Connections:** {a['num_neighbors']}")
+                    st.markdown(f"**Official Sector:** {a['official_sector']}")
+                    st.markdown(f"**Trading With:** {a['majority_sector']}")
+                    st.markdown(f"**Sector Match:** {a['sector_match_pct']:.0f}%")
+                    neighbor_list = ", ".join(a['neighbors'][:12]) + ("..." if len(a['neighbors']) > 12 else "")
+                    st.markdown(f"**Neighbors:** {neighbor_list}")
+            
+            if len(filtered) > 15:
+                st.caption(f"Showing top 15 of {len(filtered)} anomalies.")
+    
+    with col_a:
+        sec_head("Anomaly Summary")
+        
+        stat_card("Total Anomalies", len(filtered), "hidden links")
+        st.write("")
+        stat_card("Unclassified", len(unknown), "no sector data")
+        
+        sec_head("Anomalies by Sector")
+        sector_counts = {}
+        for a in filtered:
+            sector = a['official_sector']
+            sector_counts[sector] = sector_counts.get(sector, 0) + 1
+        
+        for sector, count in sorted(sector_counts.items(), key=lambda x: -x[1]):
+            pct = int(count / len(filtered) * 100) if filtered else 0
+            st.markdown(
+                f'<div style="display:flex;justify-content:space-between;padding:0.3rem 0;color:#94a3b8;font-size:0.8rem;">'
+                f'<span>{sector}</span><span style="color:#f472b6;">{count}</span></div>',
+                unsafe_allow_html=True
+            )
+            st.markdown(
+                f'<div class="bar-wrap"><div class="bar-fill" style="width:{pct}%;background:#f472b6;"></div></div>',
+                unsafe_allow_html=True
+            )
+        
+        divider()
+        sec_head("Methodology")
+        st.markdown(
+            '<div style="color:#64748b;font-size:0.75rem;line-height:1.6;">'
+            '<b>Detection:</b> A stock is flagged if <50% of its MST neighbors share its official sector.<br><br>'
+            '<b>Insight:</b> These hidden links reveal market relationships not visible in traditional sector classifications.'
+            '</div>',
+            unsafe_allow_html=True
+        )
 
 
 @st.fragment
@@ -601,14 +705,61 @@ def tab_portfolio(cn, prices):
             pct_change = ((end_val - start_val) / start_val) * 100
             c3.metric("Total Return", f"{pct_change:.2f}%")
 
+        divider()
+        sec_head("Export Data")
+
+        col_exp1, col_exp2 = st.columns(2)
+
+        with col_exp1:
+            corr_matrix = cn.get_correlation_matrix()
+            if corr_matrix is not None and all(s in corr_matrix.columns for s in portfolio):
+                portfolio_corr = corr_matrix.loc[portfolio, portfolio]
+                csv_corr = portfolio_corr.to_csv()
+                st.download_button(
+                    "📥 Download Correlation Matrix (CSV)",
+                    data=csv_corr,
+                    file_name="nepgraph_correlation_matrix.csv",
+                    mime="text/csv",
+                    use_container_width=True,
+                )
+
+        with col_exp2:
+            centrality = get_centrality(cn)
+            eigen_c = centrality.get("eigenvector", {})
+            betw_c = centrality.get("betweenness", {})
+            hub_data = []
+            for s in portfolio:
+                hub_data.append({
+                    "Ticker": s,
+                    "Community": cn.communities.get(s, -1),
+                    "Eigenvector": eigen_c.get(s, 0),
+                    "Betweenness": betw_c.get(s, 0),
+                })
+            hub_df = pd.DataFrame(hub_data)
+            csv_hub = hub_df.to_csv(index=False)
+            st.download_button(
+                "📥 Download Hub Scores (CSV)",
+                data=csv_hub,
+                file_name="nepgraph_hub_scores.csv",
+                mime="text/csv",
+                use_container_width=True,
+            )
+
 
 # ── Main ──────────────────────────────────────────────────────────────────────
 def main():
     with st.spinner("Loading market data…"):
         prices = load_data(_LOOKBACK_YEARS)
+    
+    if prices.empty:
+        st.stop()
 
     with st.spinner("Building MST network…"):
         cn = build_network(prices)
+
+    if cn is None or cn.G is None:
+        st.error("Failed to build network. Try a different time range.")
+        st.stop()
 
     communities = cn.get_louvain_communities()
 
@@ -630,7 +781,7 @@ def main():
     divider()
 
     # ── Tabs ──────────────────────────────────────────────────────────────────
-    tab1, tab2, tab3 = st.tabs(["Network Map", "Market Insights", "Portfolio Checker"])
+    tab1, tab2, tab3, tab4 = st.tabs(["Network Map", "Market Insights", "Anomaly Report", "Portfolio Checker"])
 
     with tab1:
         tab_network(cn)
@@ -639,6 +790,9 @@ def main():
         tab_insights(cn, prices)
 
     with tab3:
+        tab_anomalies(cn)
+
+    with tab4:
         tab_portfolio(cn, prices)
 
 

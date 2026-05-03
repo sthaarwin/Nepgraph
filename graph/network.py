@@ -3,6 +3,7 @@ import numpy as np
 import networkx as nx
 from scipy.stats import spearmanr
 import community as community_louvain
+from data.sector_map import get_sector, TICKER_TO_SECTOR
 
 
 class CorrelationNetwork:
@@ -82,10 +83,16 @@ class CorrelationNetwork:
 
     def get_louvain_communities(self):
         if self.G is None:
-            self.build_mst()
+            try:
+                self.build_mst()
+            except Exception as e:
+                raise ValueError(f"Failed to build MST: {e}. Check that price data has sufficient variation.")
         
-        partition = community_louvain.best_partition(self.G)
-        self.communities = partition
+        try:
+            partition = community_louvain.best_partition(self.G)
+            self.communities = partition
+        except Exception as e:
+            raise ValueError(f"Failed to detect communities: {e}. Ensure graph has connected nodes.")
         
         communities = {}
         for node, comm_id in partition.items():
@@ -119,14 +126,36 @@ class CorrelationNetwork:
 
     def get_centrality(self):
         if self.G is None:
-            self.build_mst()
+            try:
+                self.build_mst()
+            except Exception as e:
+                raise ValueError(f"Failed to build MST: {e}")
         
-        return {
-            'degree': nx.degree_centrality(self.G),
-            'betweenness': nx.betweenness_centrality(self.G),
-            'closeness': nx.closeness_centrality(self.G),
-            'eigenvector': nx.eigenvector_centrality(self.G, max_iter=1000)
-        }
+        if self.G.number_of_nodes() < 2:
+            raise ValueError("Not enough nodes for centrality calculation")
+        
+        result = {}
+        try:
+            result['degree'] = nx.degree_centrality(self.G)
+        except Exception as e:
+            result['degree'] = {n: 0 for n in self.G.nodes()}
+        
+        try:
+            result['betweenness'] = nx.betweenness_centrality(self.G)
+        except Exception as e:
+            result['betweenness'] = {n: 0 for n in self.G.nodes()}
+        
+        try:
+            result['closeness'] = nx.closeness_centrality(self.G)
+        except Exception as e:
+            result['closeness'] = {n: 0 for n in self.G.nodes()}
+        
+        try:
+            result['eigenvector'] = nx.eigenvector_centrality(self.G, max_iter=1000)
+        except Exception as e:
+            result['eigenvector'] = {n: 0 for n in self.G.nodes()}
+        
+        return result
 
     def summary(self):
         return {
@@ -136,6 +165,51 @@ class CorrelationNetwork:
             'modularity': self.get_modularity() if self.communities else None,
             'centrality': self.get_centrality() if self.G else None
         }
+
+    def get_anomalies(self):
+        if self.communities is None:
+            self.get_louvain_communities()
+        
+        anomalies = []
+        for ticker, community_id in self.communities.items():
+            official_sector = get_sector(ticker)
+            
+            neighbors = list(self.G.neighbors(ticker)) if self.G else []
+            
+            neighbor_sectors = {}
+            for neighbor in neighbors:
+                sector = get_sector(neighbor)
+                neighbor_sectors[sector] = neighbor_sectors.get(sector, 0) + 1
+            
+            if not neighbor_sectors:
+                sector_match_pct = 0
+                majority_sector = "No neighbors"
+            else:
+                total_neighbors = sum(neighbor_sectors.values())
+                community_sector = list(neighbor_sectors.keys())[0]
+                sector_match_pct = (neighbor_sectors.get(community_sector, 0) / total_neighbors) * 100
+                majority_sector = max(neighbor_sectors, key=neighbor_sectors.get)
+            
+            is_anomaly = (
+                official_sector != "Unknown" and
+                len(neighbors) > 0 and
+                sector_match_pct < 50 and
+                majority_sector != official_sector
+            )
+            
+            anomalies.append({
+                'ticker': ticker,
+                'community': community_id,
+                'official_sector': official_sector,
+                'neighbors': neighbors,
+                'neighbor_sectors': neighbor_sectors,
+                'majority_sector': majority_sector,
+                'sector_match_pct': sector_match_pct,
+                'is_anomaly': is_anomaly,
+                'num_neighbors': len(neighbors)
+            })
+        
+        return sorted(anomalies, key=lambda x: x['sector_match_pct'])
 
 
 if __name__ == '__main__':
