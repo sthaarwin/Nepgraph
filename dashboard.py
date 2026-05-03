@@ -367,6 +367,36 @@ def tab_network(cn):
         import base64
         html_b64 = base64.b64encode(html.encode('utf-8')).decode('utf-8')
         st.markdown(f'<iframe src="data:text/html;base64,{html_b64}" width="100%" height="600" style="border:none;border-radius:8px;"></iframe>', unsafe_allow_html=True)
+        
+        st.markdown(r"""
+        <div style="margin-top:1rem;display:grid;grid-template-columns:repeat(5,1fr);gap:0.6rem;">
+        <div style="background:linear-gradient(135deg,#38bdf825,#38bdf815);border:1px solid #38bdf860;border-radius:12px;padding:0.8rem;text-align:center;">
+        <b style="color:#38bdf8;font-size:0.8rem;">1. Log Returns</b><br>
+        <span style="color:#94a3b8;font-size:0.7rem;">Calculate daily returns</span><br>
+        <span style="color:#cbd5e1;font-size:0.7rem;">r<sub>t</sub> = ln(P<sub>t</sub>/P<sub>t-1</sub>)</span>
+        </div>
+        <div style="background:linear-gradient(135deg,#f472b625,#f472b615);border:1px solid #f472b660;border-radius:12px;padding:0.8rem;text-align:center;">
+        <b style="color:#f472b6;font-size:0.8rem;">2. Correlation</b><br>
+        <span style="color:#94a3b8;font-size:0.7rem;">Stock price similarity</span><br>
+        <span style="color:#cbd5e1;font-size:0.7rem;">Pearson coefficient</span>
+        </div>
+        <div style="background:linear-gradient(135deg,#34d39925,#34d39915);border:1px solid #34d39960;border-radius:12px;padding:0.8rem;text-align:center;">
+        <b style="color:#34d399;font-size:0.8rem;">3. Distance</b><br>
+        <span style="color:#94a3b8;font-size:0.7rem;">Convert correlation</span><br>
+        <span style="color:#cbd5e1;font-size:0.7rem;">d = √(2(1-ρ))</span>
+        </div>
+        <div style="background:linear-gradient(135deg,#fbbf2425,#fbbf2415);border:1px solid #fbbf2460;border-radius:12px;padding:0.8rem;text-align:center;">
+        <b style="color:#fbbf24;font-size:0.8rem;">4. MST</b><br>
+        <span style="color:#94a3b8;font-size:0.7rem;">Remove noise edges</span><br>
+        <span style="color:#cbd5e1;font-size:0.7rem;">Kruskal's algorithm</span>
+        </div>
+        <div style="background:linear-gradient(135deg,#a78bfa25,#a78bfa15);border:1px solid #a78bfa60;border-radius:12px;padding:0.8rem;text-align:center;">
+        <b style="color:#a78bfa;font-size:0.8rem;">5. Louvain</b><br>
+        <span style="color:#94a3b8;font-size:0.7rem;">Find clusters</span><br>
+        <span style="color:#cbd5e1;font-size:0.7rem;">Max modularity Q</span>
+        </div>
+        </div>
+        """, unsafe_allow_html=True)
 
     with col_l:
         sec_head("Communities")
@@ -389,18 +419,6 @@ def tab_network(cn):
             'Node size → Eigenvector<br>Edge width → Correlation</span>',
             unsafe_allow_html=True,
         )
-        st.markdown(r"""
-        <div style="background:rgba(56,189,248,0.05);border:1px solid rgba(56,189,248,0.15);border-radius:6px;padding:0.6rem 0.8rem;margin-top:0.5rem;">
-        <b style="color:#38bdf8;font-size:0.75rem;">ALGORITHM</b><br>
-        <span style="color:#94a3b8;font-size:0.7rem;">
-        1) Log returns: r<tsub>t</tsub> = ln(P<tsub>t</tsub>/P<tsub>t-1</tsub>) &nbsp;|&nbsp;
-        2) Pearson correlation &nbsp;|&nbsp;
-        3) Distance: d = sqrt(2(1-ρ)) &nbsp;|&nbsp;
-        4) MST (Kruskal) &nbsp;|&nbsp;
-        5) Louvain (modularity maximization)
-        </span>
-        </div>
-        """, unsafe_allow_html=True)
 
 
 def tab_insights(cn, prices):
