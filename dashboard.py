@@ -98,10 +98,14 @@ COLORS = [
 
 st.sidebar.markdown("## NepGraph Controls")
 
-if st.sidebar.button("↻ Refresh Data"):
-    st.cache_data.clear()
-    st.cache_resource.clear()
-    st.rerun()
+with st.sidebar:
+    if st.button("↻ Refresh Data", use_container_width=True):
+        with st.spinner("Clearing cache..."):
+            st.cache_data.clear()
+            st.cache_resource.clear()
+            st.rerun()
+
+st.sidebar.markdown("---")
 
 time_regime_map = {
     "1 Year": 1,
@@ -121,6 +125,14 @@ st.sidebar.markdown("---")
 st.sidebar.markdown("### Technical Indicators")
 show_sma = st.sidebar.checkbox("Show 50/200 Day SMA", value=True)
 show_bb = st.sidebar.checkbox("Show Bollinger Bands", value=False)
+
+with st.sidebar.expander("💡 Tips"):
+    st.markdown("""
+    - **Network Tab**: Drag nodes to explore connections
+    - **Insights Tab**: Click hub stocks to see details  
+    - **Anomaly Tab**: Stocks trading outside their sector
+    - **Portfolio Tab**: Add more stocks for better analysis
+    """)
 
 
 def clr(comm_id: int) -> str:
@@ -161,13 +173,13 @@ def load_data(lookback_years):
         return pd.DataFrame()
 
 
-@st.cache_resource(show_spinner=False)
+@st.cache_resource(show_spinner=False, hash_funcs={"numpy.ndarray": lambda x: id(x)}, ttl=3600)
 def build_network(_prices):
     try:
         if _prices.empty:
             raise ValueError("Empty price data")
         
-        prices = _prices.astype('float64')
+        prices = _prices.astype('float32')
         prices = prices.loc[:, prices.std() > 0]
         prices = prices.loc[:, prices.nunique() >= 30]
 
@@ -179,14 +191,14 @@ def build_network(_prices):
 
         if cn.log_returns is not None:
             cn.log_returns = cn.log_returns.dropna(axis=1, how='all')
-            cn.log_returns = cn.log_returns.loc[:, cn.log_returns.std() > 0]
-            cn.price_data  = prices[cn.log_returns.columns]
+            cn.log_returns = cn.log_returns.loc[:, cn.log_returns.std() > 0].astype('float32')
+            cn.price_data  = prices[cn.log_returns.columns].astype('float32')
 
         cn.get_correlation_matrix()
         cn.get_distance_matrix()
 
         if cn.distance_matrix is not None:
-            cn.distance_matrix = cn.distance_matrix.fillna(2.0)
+            cn.distance_matrix = cn.distance_matrix.fillna(2.0).astype('float32')
 
         cn.build_mst()
         cn.get_louvain_communities()
@@ -247,19 +259,19 @@ def get_pyvis_html(_cn_id, nodes_data, edges_data, communities_map):
             title=f"Dist {weight:.3f}",
         )
 
-    # Fewer iterations + disable physics after stabilisation = much faster
+    # Optimized for faster load
     net.set_options("""{
         "physics": {
             "barnesHut": {
-                "gravitationalConstant": -6000,
-                "centralGravity": 0.2,
-                "springLength": 100,
-                "damping": 0.18
+                "gravitationalConstant": -8000,
+                "centralGravity": 0.3,
+                "springLength": 80,
+                "damping": 0.2
             },
-            "stabilization": {"iterations": 120, "updateInterval": 50},
-            "minVelocity": 0.75
+            "stabilization": {"iterations": 80, "updateInterval": 25},
+            "minVelocity": 0.8
         },
-        "interaction": {"hover": true, "tooltipDelay": 120},
+        "interaction": {"hover": true, "tooltipDelay": 100},
         "edges": {"smooth": {"type": "continuous", "roundness": 0}}
     }""")
 
@@ -368,35 +380,48 @@ def tab_network(cn):
         html_b64 = base64.b64encode(html.encode('utf-8')).decode('utf-8')
         st.markdown(f'<iframe src="data:text/html;base64,{html_b64}" width="100%" height="600" style="border:none;border-radius:8px;"></iframe>', unsafe_allow_html=True)
         
-        st.markdown(r"""
-        <div style="margin-top:1rem;display:grid;grid-template-columns:repeat(5,1fr);gap:0.6rem;">
-        <div style="background:linear-gradient(135deg,#38bdf825,#38bdf815);border:1px solid #38bdf860;border-radius:12px;padding:0.8rem;text-align:center;">
-        <b style="color:#38bdf8;font-size:0.8rem;">1. Log Returns</b><br>
-        <span style="color:#94a3b8;font-size:0.7rem;">Calculate daily returns</span><br>
-        <span style="color:#cbd5e1;font-size:0.7rem;">r<sub>t</sub> = ln(P<sub>t</sub>/P<sub>t-1</sub>)</span>
-        </div>
-        <div style="background:linear-gradient(135deg,#f472b625,#f472b615);border:1px solid #f472b660;border-radius:12px;padding:0.8rem;text-align:center;">
-        <b style="color:#f472b6;font-size:0.8rem;">2. Correlation</b><br>
-        <span style="color:#94a3b8;font-size:0.7rem;">Stock price similarity</span><br>
-        <span style="color:#cbd5e1;font-size:0.7rem;">Pearson coefficient</span>
-        </div>
-        <div style="background:linear-gradient(135deg,#34d39925,#34d39915);border:1px solid #34d39960;border-radius:12px;padding:0.8rem;text-align:center;">
-        <b style="color:#34d399;font-size:0.8rem;">3. Distance</b><br>
-        <span style="color:#94a3b8;font-size:0.7rem;">Convert correlation</span><br>
-        <span style="color:#cbd5e1;font-size:0.7rem;">d = √(2(1-ρ))</span>
-        </div>
-        <div style="background:linear-gradient(135deg,#fbbf2425,#fbbf2415);border:1px solid #fbbf2460;border-radius:12px;padding:0.8rem;text-align:center;">
-        <b style="color:#fbbf24;font-size:0.8rem;">4. MST</b><br>
-        <span style="color:#94a3b8;font-size:0.7rem;">Remove noise edges</span><br>
-        <span style="color:#cbd5e1;font-size:0.7rem;">Kruskal's algorithm</span>
-        </div>
-        <div style="background:linear-gradient(135deg,#a78bfa25,#a78bfa15);border:1px solid #a78bfa60;border-radius:12px;padding:0.8rem;text-align:center;">
-        <b style="color:#a78bfa;font-size:0.8rem;">5. Louvain</b><br>
-        <span style="color:#94a3b8;font-size:0.7rem;">Find clusters</span><br>
-        <span style="color:#cbd5e1;font-size:0.7rem;">Max modularity Q</span>
-        </div>
+        st.markdown("---")
+        st.markdown("### 📐 Algorithm Pipeline")
+        
+        st.markdown("""
+        <div style="background:linear-gradient(90deg,#38bdf820,#38bdf810);border-left:4px solid #38bdf8;border-radius:0 8px 8px 0;padding:0.8rem 1rem;margin-bottom:0.5rem;">
+        <b style="color:#38bdf8;font-size:1rem;">1. Log Returns</b>
+        <span style="color:#94a3b8;font-size:0.9rem;"> — Calculate daily returns from price data</span>
         </div>
         """, unsafe_allow_html=True)
+        st.latex(r"r_t = \ln\left(\frac{P_t}{P_{t-1}}\right)")
+        
+        st.markdown("""
+        <div style="background:linear-gradient(90deg,#f472b620,#f472b610);border-left:4px solid #f472b6;border-radius:0 8px 8px 0;padding:0.8rem 1rem;margin-bottom:0.5rem;">
+        <b style="color:#f472b6;font-size:1rem;">2. Correlation</b>
+        <span style="color:#94a3b8;font-size:0.9rem;"> — Compute Pearson correlation between all stock pairs</span>
+        </div>
+        """, unsafe_allow_html=True)
+        st.latex(r"\rho_{ij} = \frac{\text{Cov}(r_i,r_j)}{\sigma_i \sigma_j}")
+        
+        st.markdown("""
+        <div style="background:linear-gradient(90deg,#34d39920,#34d39910);border-left:4px solid #34d399;border-radius:0 8px 8px 0;padding:0.8rem 1rem;margin-bottom:0.5rem;">
+        <b style="color:#34d399;font-size:1rem;">3. Distance</b>
+        <span style="color:#94a3b8;font-size:0.9rem;"> — Convert correlation to distance metric</span>
+        </div>
+        """, unsafe_allow_html=True)
+        st.latex(r"d_{ij} = \sqrt{2(1 - \rho_{ij})}")
+        
+        st.markdown("""
+        <div style="background:linear-gradient(90deg,#fbbf2420,#fbbf2410);border-left:4px solid #fbbf24;border-radius:0 8px 8px 0;padding:0.8rem 1rem;margin-bottom:0.5rem;">
+        <b style="color:#fbbf24;font-size:1rem;">4. MST (Minimum Spanning Tree)</b>
+        <span style="color:#94a3b8;font-size:0.9rem;"> — Kruskal's algorithm to remove noise edges</span>
+        </div>
+        """, unsafe_allow_html=True)
+        st.latex(r"T = \text{MST}(d_{ij})")
+        
+        st.markdown("""
+        <div style="background:linear-gradient(90deg,#a78bfa20,#a78bfa10);border-left:4px solid #a78bfa;border-radius:0 8px 8px 0;padding:0.8rem 1rem;margin-bottom:0.5rem;">
+        <b style="color:#a78bfa;font-size:1rem;">5. Louvain Community Detection</b>
+        <span style="color:#94a3b8;font-size:0.9rem;"> — Find clusters by maximizing modularity Q</span>
+        </div>
+        """, unsafe_allow_html=True)
+        st.latex(r"Q = \frac{1}{2m}\sum_{ij}(A_{ij}-\frac{k_i k_j}{2m})\delta(c_i,c_j)")
 
     with col_l:
         sec_head("Communities")
@@ -597,8 +622,22 @@ def tab_portfolio(cn, prices):
         )
 
     with col_res:
+        if len(portfolio) == 0:
+            st.markdown("""
+            <div class="box-info" style="text-align:center;padding:2rem;">
+            <b>📊 Select stocks to analyze</b><br>
+            <span style="color:#94a3b8;">Use the selector on the left to choose stocks for portfolio analysis</span>
+            </div>
+            """, unsafe_allow_html=True)
+            return
+        
         if len(portfolio) < 2:
-            st.markdown('<div class="box-info">Select at least 2 stocks to analyse diversification.</div>', unsafe_allow_html=True)
+            st.markdown("""
+            <div class="box-warn" style="text-align:center;padding:2rem;">
+            <b>⚠️ Need more stocks</b><br>
+            <span style="color:#94a3b8;">Select at least 2 stocks to analyze diversification and correlation</span>
+            </div>
+            """, unsafe_allow_html=True)
             return
 
         sec_head("Diversification Analysis")
@@ -804,16 +843,17 @@ def main():
     divider()
 
     c1, c2, c3, c4, c5 = st.columns(5, gap="small")
-    with c1: stat_card("Stocks", cn.G.number_of_nodes())
-    with c2: stat_card("Communities", len(communities))
+    with c1: stat_card("Stocks", cn.G.number_of_nodes(), "in MST")
+    with c2: stat_card("Communities", len(communities), "Louvain clusters")
     with c3: 
         mod = get_modularity(id(cn), cn)
-        stat_card("Modularity", f"{mod:.3f}", "Q > 0.4 = good")
+        quality = "✓ Good" if mod > 0.4 else "○ Fair"
+        stat_card("Modularity", f"{mod:.3f}", quality)
     with c4: 
         d1 = pd.to_datetime(prices.index[0]).strftime("%b %Y")
         d2 = pd.to_datetime(prices.index[-1]).strftime("%b %Y")
         stat_card("Date Range", f"{d1} → {d2}")
-    with c5: stat_card("Compute", f"{compute_time:.2f}s", "wall clock")
+    with c5: stat_card("Compute", f"{compute_time:.2f}s", f"{cn.G.number_of_edges()} edges")
 
     divider()
 
