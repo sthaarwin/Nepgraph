@@ -1,73 +1,59 @@
+import json
+
 NEPSE_SECTORS = {
     "Commercial Banks": [
-        "NMB", "NBL", "BOKL", "SBL", "SCB", "EBL", "SBIB", "MBL", 
-        "GBBL", "LBBL", "SADBL", "CBL", "CCBL", "GBIME", "BPCL", "NCCB",
-        "NRB", "SANIMA", "SNPB", "NICBL", "KPCL", "NABIL", "HBL", "CIT",
-        "NBB", "SBI", "NLICL", "PRVU", "MNBBL", "NABBC", "NIB", "KBL"
+        "ADBL", "CZBIL", "EBL", "GBIME", "HBL", "KBL", "LSL", "MBL", 
+        "NABIL", "NBL", "NICA", "NIMB", "NMB", "PCBL", "PRVU", "SANIMA", "SBI", "SCB"
     ],
     "Development Banks": [
-        "MDB", "CORBL", "KRBL", "GLH", "SIFC", "SHBL", "PROFL", "GFCL",
-        "GRDBL", "JBBL", "LBL", "CZBIL", "EDBL", "KSBBL", "RLFL", "SAPDBL",
-        "GYAN", "MERO", "ICFC", "BFC", "MFIL", "MPFL", "MLBL", "NHPC",
-        "PMS", "PFL", "SLI", "ADBL", "BARUN", "CFCL", "CGH", "CHDC", "CHL",
-        "GHL", "GLICL", "HDHPC", "HURJA", "JLI", "JOSHI", "KKHC", "LEC",
-        "LICN", "MEN", "MHNL", "NHDL", "NICA", "PCBL", "PLI", "PLIC",
-        "PMHPL", "SAHAS", "SRBL", "SSHL", "UNHPL", "UPCL", "ULI", "UMRH"
+        "CORBL", "EDBL", "GBBL", "GRDBL", "JBBL", "KRBL", "KSBBL", "LBBL", 
+        "MDB", "MERO", "MNBBL", "SADBL", "SAPDBL", "SHBL", "SINDU"
     ],
     "Finance Companies": [
-        "SFCL", "MFIL", "GFCL", "GMFIL", "JFL", "SIC", "PROFL", "GUFL",
-        "CFL", "KAFIN", "NIFRA", "NLIC", "MEGA"
+        "BFC", "CFCL", "CFL", "GFCL", "GMFIL", "GUFL", "ICFC", "JFL", 
+        "MFIL", "MPFL", "PFL", "PROFL", "RLFL", "SFCL", "SIFC"
     ],
     "Hydro Power": [
-        "NHPC", "HIDCL", "KPCL", "DHPL", "CHCL", "PPCL", "AKJCL", "RHPC",
-        "HPPL", "AHPC", "API", "SJVCL", "NGPL", "UMHL", "UPPER", "RRHP",
-        "RHPL", "RURU", "TLBS", "NYADI", "MHK", "RADHI", "RBDC", "AKPL",
-        "BSPC", "HPPL", "SPDL", "BHGK", "UPCL", "CWJC", "KHL", "LLBS",
-        "MBJC", "MKJC", "MLJ", "SMJC", "SWM", "TPC", "TRH", "UNHPL", "URC",
-        "SPC"
+        "AHL", "AHPC", "AKJCL", "AKPL", "API", "BARUN", "BHGK", "BSPC", 
+        "CHCL", "CHDC", "CHL", "CWJC", "DHPL", "GHL", "GLH", "HDHPC", 
+        "HIDCL", "HPPL", "HURJA", "KHL", "KKHC", "KPCL", "LEC", "MBJC", 
+        "MHK", "MKJC", "MHNL", "MLJ", "NGPL", "NHDL", "NHPC", "NYADI", 
+        "PMHPL", "PPCL", "RADHI", "RBDC", "RHPC", "RHPL", "RRHP", "RURU", 
+        "SAHAS", "SGHL", "SJCL", "SJVCL", "SMJC", "SPC", "SPDL", "SSHL", 
+        "SWM", "TAKSAR", "TPC", "UMHL", "UMRH", "UNHPL", "UPCL", "UPPER", "URC"
     ],
     "Manufacturing And Processing": [
-        "BIRL", "BOT", "CEBRO", "CFL", "CSBBL", "DDBL", "DLBS", "FHL",
-        "GMF", "GROTE", "GURU", "HAT", "HAWA", "HBT", "HERO", "HLC",
-        "HMHL", "HMM", "HRL", "IC", "JAR", "JTS", "KCL", "KMCL", "KTI",
-        "LG", "LIC", "LSL", "MBL", "MCD", "MH", "MHL", "MIDI", "ML",
-        "MMF", "MOJ", "MP", "MSM", "MTB", "NBB", "NBM", "NBS", "NCC",
-        "NLIC", "NRN", "NSM", "NTW", "ODC", "OK", "PBT", "PC", "PF",
-        "PGC", "PGR", "PH", "PIC", "PL", "PM", "PR", "PRIN", "PRO",
-        "RAD", "RBM", "RC", "RDB", "RH", "RII", "RLG", "SAB", "SAF",
-        "SB", "SC", "SCL", "SG", "SH", "SHL", "SI", "SIC", "SK", "SL",
-        "SMC", "SMS", "SO", "SP", "SR", "STC", "SW", "TAW", "TCC", "TF",
-        "TG", "TH", "TI", "TK", "TL", "TM", "TN", "TR", "TS", "TT", "TV",
-        "UL", "UN", "US", "UT", "VTL", "WCF", "WEL", "WH", "WIC", "WMF",
-        "SHEL", "SHINE", "SHPC"
+        "BIRL", "BOT", "CSBBL", "DDBL", "DLBS", "FHL", "GMF", "HBT", 
+        "HDL", "HRL", "LSL", "SAB", "SCL", "SHINE", "SHEL", "UN"
     ],
     "Hotels And Tourism": [
-        "SHL", "TRH", "OHL", "KGL", "VL", "CM", "DGM", "GM", "HDL", "HRB",
-        "LEI", "LI", "ME", "NATH", "NI", "OZ", "PT", "RI", "RR", "SH",
-        "SI", "SRS", "TH", "TR", "TTH", "TTI", "UM", "UR", "VO"
+        "CITY", "KGL", "OHL", "SHL", "TRH"
     ],
     "Trading": [
-        "STC", "SG", "SW", "WMF", "WEL", "SINDU"
+        "BBC", "STC"
     ],
     "Mutual Fund": [
-        "NMB", "LBS", "KMLB", "SNMF", "KSMBF", "SMB", "CFM", "GBF", "LGF",
-        "MKF", "NSF", "OMF", "PRF", "PTF", "TMF", "TRF"
+        "BFED", "CFFF", "CMF1", "CMF2", "GIBF1", "KBF", "KEF", "LBF", 
+        "MEOF1", "NIBF1", "NIBF2", "NMB50", "NMBHF1", "PMF", "SAEF", "SIGS2"
     ],
     "Microfinance": [
-        "MMF", "KMF", "SMF", "KMFB", "KMF", "NMF", "CMF", "MGF", "SGMF",
-        "GMF", "FOWAD", "SAMAJ", "MAW", "MCC", "SCB", "NAGRI", "PRAG", "SJCL"
+        "ACLBSL", "ALBSL", "ANLB", "CBBL", "CLBSL", "DDBL", "FOWAD", "GGBSL", 
+        "GMFBS", "ILBS", "JALPA", "KMCDB", "LLBS", "MERO", "MLBBL", "MLBSL", 
+        "NESDO", "NICLBSL", "NMFBS", "NUBL", "SABSL", "SADBL", "SAMAJ", "SDLBSL", 
+        "SKBBL", "SMB", "SMFBS", "SMHL", "SWBBL", "USLB"
     ],
-    "Insurance": [
-        "NIC", "NLIC", "SBI", "LIC", "ALICL", "BIMAL", "GURU", "PRABHAT",
-        "Sagar", "Swastik", "Union", "Vijaya", "SLICL"
+    "Life Insurance": [
+        "ALICL", "CLI", "ILI", "JLI", "LICN", "NLIC", "NLICL", "PLI", "RIL", "SLICL"
+    ],
+    "Non Life Insurance": [
+        "EIC", "GIC", "HGI", "IGI", "LGIL", "NIL", "NICL", "NLG", 
+        "PRIN", "RBCLI", "SICL", "SIL", "SPIL", "UIC"
     ],
     "Investment": [
-        "CIT", "ICFC", "IID", "MKHC", "NIFRA", "PBT", "PF", "PIC", "PYE",
-        "RTL", "SAI", "SIC", "SK", "SMC", "SW", "TDV", "TEA", "TF", "RLI"
+        "CIT", "ENL", "HATHY", "IID", "NIFRA", "NRN"
     ],
     "Others": [
-        "NFS", "NWD", "ENM", "KBL", "NIB", "OS", "PST",
-        "SAND", "SIL", "SIN", "SIT", "SM", "SN", "SP", "SR", "ST"
+        "NTC"
     ]
 }
 
@@ -81,3 +67,19 @@ def get_sector(ticker):
 
 def get_all_sectors():
     return list(NEPSE_SECTORS.keys())
+
+def count_all_tickers():
+    return len(TICKER_TO_SECTOR)
+
+def get_tickers_by_sector(sector_name):
+    return NEPSE_SECTORS.get(sector_name, [])
+
+if __name__ == '__main__':
+    test_ticker = "SSHL"
+    print(f"Ticker '{test_ticker}' belongs to: {get_sector(test_ticker)}")
+    
+    print("\n--- Available Sectors ---")
+    print(json.dumps(get_all_sectors(), indent=2))
+    
+    print("\n--- Metrics Summary ---")
+    print(f"Total Unique Mapped Tickers: {count_all_tickers()}")
