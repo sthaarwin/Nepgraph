@@ -185,40 +185,40 @@ class CorrelationNetwork:
             'centrality': self.get_centrality() if self.G else None
         }
 
-    def get_anomalies(self):
-        if self.communities is None:
-            self.get_louvain_communities()
-        
+    def get_anomalies(self, top_n=5):
+        if self.corr_matrix is None:
+            self.get_correlation_matrix()
+
         anomalies = []
-        for ticker, community_id in self.communities.items():
+        for ticker in self.corr_matrix.columns:
             official_sector = get_sector(ticker)
-            
-            neighbors = list(self.G.neighbors(ticker)) if self.G else []
-            
+
+            series = self.corr_matrix[ticker].drop(ticker).abs()
+            neighbors = series.nlargest(top_n).index.tolist()
+
             neighbor_sectors = {}
             for neighbor in neighbors:
                 sector = get_sector(neighbor)
                 neighbor_sectors[sector] = neighbor_sectors.get(sector, 0) + 1
-            
+
             if not neighbor_sectors:
                 sector_match_pct = 0
                 majority_sector = "No neighbors"
+                total_neighbors = 0
             else:
                 total_neighbors = sum(neighbor_sectors.values())
-                community_sector = list(neighbor_sectors.keys())[0]
-                sector_match_pct = (neighbor_sectors.get(community_sector, 0) / total_neighbors) * 100
                 majority_sector = max(neighbor_sectors, key=neighbor_sectors.get)
-            
+                sector_match_pct = (neighbor_sectors.get(official_sector, 0) / total_neighbors) * 100
+
             is_anomaly = (
                 official_sector != "Unknown" and
-                len(neighbors) > 0 and
-                sector_match_pct < 50 and
-                majority_sector != official_sector
+                total_neighbors > 0 and
+                sector_match_pct < 50
             )
-            
+
             anomalies.append({
                 'ticker': ticker,
-                'community': community_id,
+                'community': self.communities.get(ticker, -1) if self.communities else -1,
                 'official_sector': official_sector,
                 'neighbors': neighbors,
                 'neighbor_sectors': neighbor_sectors,
@@ -227,7 +227,7 @@ class CorrelationNetwork:
                 'is_anomaly': is_anomaly,
                 'num_neighbors': len(neighbors)
             })
-        
+
         return sorted(anomalies, key=lambda x: x['sector_match_pct'])
 
 

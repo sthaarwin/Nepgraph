@@ -2,24 +2,26 @@ import json
 
 NEPSE_SECTORS = {
     "Commercial Banks": [
-        "ADBL", "CZBIL", "EBL", "GBIME", "HBL", "KBL", "LSL", "MBL", 
-        "NABIL", "NBL", "NICA", "NIMB", "NMB", "PCBL", "PRVU", "SANIMA", "SBI", "SCB"
+        "ADBL", "BOKL", "CBL", "CCBL", "CZBIL", "EBL", "GBIME", "HBL", "KBL", "LBL",
+        "LSL", "MBL", "MEGA", "NABIL", "NBB", "NBL", "NCCB", "NIB", "NICA", "NIMB",
+        "NMB", "PCBL", "PRVU", "SANIMA", "SBI", "SBL", "SCB"
     ],
     "Development Banks": [
-        "CORBL", "EDBL", "GBBL", "GRDBL", "JBBL", "KRBL", "KSBBL", "LBBL", 
-        "MDB", "MERO", "MNBBL", "SADBL", "SAPDBL", "SHBL", "SINDU"
+        "CORBL", "EDBL", "GBBL", "GRDBL", "JBBL", "KRBL", "KSBBL", "LBBL",
+        "MDB", "MERO", "MLBL", "MNBBL", "NABBC", "SADBL", "SAPDBL", "SHBL",
+        "SINDU", "SRBL"
     ],
     "Finance Companies": [
-        "BFC", "CFCL", "CFL", "GFCL", "GMFIL", "GUFL", "ICFC", "JFL", 
-        "MFIL", "MPFL", "PFL", "PROFL", "RLFL", "SFCL", "SIFC"
+        "BFC", "CFCL", "CFL", "GFCL", "GMFIL", "GUFL", "ICFC", "JFL",
+        "MFIL", "MPFL", "NFS", "PFL", "PROFL", "RLFL", "SFCL", "SIFC"
     ],
     "Hydro Power": [
-        "AHL", "AHPC", "AKJCL", "AKPL", "API", "BARUN", "BHGK", "BSPC", 
-        "CHCL", "CHDC", "CHL", "CWJC", "DHPL", "GHL", "GLH", "HDHPC", 
-        "HIDCL", "HPPL", "HURJA", "KHL", "KKHC", "KPCL", "LEC", "MBJC", 
-        "MHK", "MKJC", "MHNL", "MLJ", "NGPL", "NHDL", "NHPC", "NYADI", 
-        "PMHPL", "PPCL", "RADHI", "RBDC", "RHPC", "RHPL", "RRHP", "RURU", 
-        "SAHAS", "SGHL", "SJCL", "SJVCL", "SMJC", "SPC", "SPDL", "SSHL", 
+        "AHL", "AHPC", "AKJCL", "AKPL", "API", "BARUN", "BHGK", "BPCL", "BSPC",
+        "CHCL", "CHDC", "CHL", "CWJC", "DHPL", "GHL", "GLH", "HDHPC",
+        "HIDCL", "HPPL", "HURJA", "JOSHI", "KHL", "KKHC", "KPCL", "LEC", "MBJC",
+        "MEN", "MHK", "MKJC", "MHNL", "MLJ", "NGPL", "NHDL", "NHPC", "NYADI",
+        "PMHPL", "PPCL", "RADHI", "RBDC", "RHPC", "RHPL", "RRHP", "RURU",
+        "SAHAS", "SGHL", "SHPC", "SJCL", "SJVCL", "SMJC", "SPC", "SPDL", "SSHL",
         "SWM", "TAKSAR", "TPC", "UMHL", "UMRH", "UNHPL", "UPCL", "UPPER", "URC"
     ],
     "Manufacturing And Processing": [
@@ -27,7 +29,7 @@ NEPSE_SECTORS = {
         "HDL", "HRL", "LSL", "SAB", "SCL", "SHINE", "SHEL", "UN"
     ],
     "Hotels And Tourism": [
-        "CITY", "KGL", "OHL", "SHL", "TRH"
+        "CGH", "CITY", "KGL", "OHL", "SHL", "TRH"
     ],
     "Trading": [
         "BBC", "STC"
@@ -43,7 +45,8 @@ NEPSE_SECTORS = {
         "SKBBL", "SMB", "SMFBS", "SMHL", "SWBBL", "USLB"
     ],
     "Life Insurance": [
-        "ALICL", "CLI", "ILI", "JLI", "LICN", "NLIC", "NLICL", "PLI", "RIL", "SLICL"
+        "ALICL", "CLI", "GLICL", "ILI", "JLI", "LICN", "NLIC", "NLICL",
+        "PLI", "PLIC", "RIL", "RLI", "SLI", "SLICL", "ULI"
     ],
     "Non Life Insurance": [
         "EIC", "GIC", "HGI", "IGI", "LGIL", "NIL", "NICL", "NLG", 

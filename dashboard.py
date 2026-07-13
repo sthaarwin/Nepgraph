@@ -134,6 +134,15 @@ with st.sidebar.expander("💡 Tips"):
     - **Portfolio Tab**: Add more stocks for better analysis
     """)
 
+st.sidebar.markdown("---")
+st.sidebar.markdown("### Anomaly Detection")
+_TOP_N = st.sidebar.slider(
+    "Top-N Correlated Peers",
+    min_value=3, max_value=20, value=5, step=1,
+    help="Number of closest-correlated peers to compare against each stock. "
+         "Lower = noisier but more sensitive. Higher = smoother but less sensitive."
+)
+
 
 def clr(comm_id: int) -> str:
     return COLORS[comm_id % len(COLORS)]
@@ -220,8 +229,8 @@ def get_modularity(_cn_id, _cn):
 
 
 @st.cache_data(show_spinner=False)
-def get_anomalies(_cn_id, _cn):
-    return _cn.get_anomalies()
+def get_anomalies(_cn_id, _cn, top_n):
+    return _cn.get_anomalies(top_n=top_n)
 
 
 @st.cache_data(show_spinner=False)
@@ -530,10 +539,11 @@ def tab_insights(cn, prices):
             st.line_chart(chart_df, height=160)
 
 
-def tab_anomalies(cn):
-    anomalies = get_anomalies(id(cn), cn)
+def tab_anomalies(cn, top_n):
+    anomalies = get_anomalies(id(cn), cn, top_n)
     
     filtered = [a for a in anomalies if a['is_anomaly']]
+    partial = [a for a in anomalies if 0 < a['sector_match_pct'] < 100 and a['official_sector'] != 'Unknown']
     unknown = [a for a in anomalies if a['official_sector'] == "Unknown"]
     
     col_h, col_a = st.columns([2, 1], gap="large")
@@ -548,58 +558,82 @@ def tab_anomalies(cn):
             unsafe_allow_html=True
         )
         
-        if not filtered:
+        cross_sector = sorted(
+            [a for a in anomalies if a['official_sector'] != 'Unknown' and a['sector_match_pct'] < 100],
+            key=lambda x: x['sector_match_pct']
+        )
+        
+        if not cross_sector:
             st.markdown(
                 '<div class="box-success">No significant anomalies detected. '
                 'Most stocks are trading with their expected sector peers.</div>',
                 unsafe_allow_html=True
             )
         else:
-            st.markdown(f"**{len(filtered)} hidden-link anomalies detected**:")
+            st.markdown(f"**{len(cross_sector)} stocks with cross-sector MST connections:**")
             
-            for a in filtered[:15]:
+            for a in cross_sector[:20]:
                 c = clr(a['community'])
-                with st.expander(f"**{a['ticker']}** — {a['official_sector']} → {a['majority_sector']} ({a['sector_match_pct']:.0f}% match)"):
+                severity = "🔴" if a['sector_match_pct'] < 50 else "🟡"
+                label = f"{severity} **{a['ticker']}** — {a['official_sector']} ({a['sector_match_pct']:.0f}% sector match)"
+                with st.expander(label):
                     st.markdown(f"**Community:** {a['community']} · **Connections:** {a['num_neighbors']}")
                     st.markdown(f"**Official Sector:** {a['official_sector']}")
-                    st.markdown(f"**Trading With:** {a['majority_sector']}")
-                    st.markdown(f"**Sector Match:** {a['sector_match_pct']:.0f}%")
+                    st.markdown(f"**Majority Neighbor Sector:** {a['majority_sector']}")
+                    st.markdown(f"**Neighbors by sector:** {a['neighbor_sectors']}")
                     neighbor_list = ", ".join(a['neighbors'][:12]) + ("..." if len(a['neighbors']) > 12 else "")
                     st.markdown(f"**Neighbors:** {neighbor_list}")
             
-            if len(filtered) > 15:
-                st.caption(f"Showing top 15 of {len(filtered)} anomalies.")
+            if len(cross_sector) > 20:
+                st.caption(f"Showing top 20 of {len(cross_sector)} stocks.")
     
     with col_a:
         sec_head("Anomaly Summary")
         
-        stat_card("Total Anomalies", len(filtered), "hidden links")
+        stat_card("Total Flags", len(cross_sector), "stocks with cross-sector links")
+        st.write("")
+        stat_card("0% Match", len(filtered), "no same-sector neighbors")
         st.write("")
         stat_card("Unclassified", len(unknown), "no sector data")
         
-        sec_head("Anomalies by Sector")
-        sector_counts = {}
-        for a in filtered:
-            sector = a['official_sector']
-            sector_counts[sector] = sector_counts.get(sector, 0) + 1
+        if cross_sector:
+            by_severity = {}
+            for a in cross_sector:
+                bucket = "0%" if a['sector_match_pct'] == 0 else "1-49%" if a['sector_match_pct'] < 50 else "50-99%"
+                by_severity[bucket] = by_severity.get(bucket, 0) + 1
+            for bucket in ["0%", "1-49%", "50-99%"]:
+                if bucket in by_severity:
+                    st.markdown(
+                        f'<div style="display:flex;justify-content:space-between;padding:0.3rem 0;color:#94a3b8;font-size:0.8rem;">'
+                        f'<span>{bucket}</span><span style="color:#f472b6;">{by_severity[bucket]}</span></div>',
+                        unsafe_allow_html=True
+                    )
         
-        for sector, count in sorted(sector_counts.items(), key=lambda x: -x[1]):
-            pct = int(count / len(filtered) * 100) if filtered else 0
-            st.markdown(
-                f'<div style="display:flex;justify-content:space-between;padding:0.3rem 0;color:#94a3b8;font-size:0.8rem;">'
-                f'<span>{sector}</span><span style="color:#f472b6;">{count}</span></div>',
-                unsafe_allow_html=True
-            )
-            st.markdown(
-                f'<div class="bar-wrap"><div class="bar-fill" style="width:{pct}%;background:#f472b6;"></div></div>',
-                unsafe_allow_html=True
-            )
+        if filtered:
+            sec_head("Top Sectors Affected")
+            sector_counts = {}
+            for a in filtered:
+                sector = a['official_sector']
+                sector_counts[sector] = sector_counts.get(sector, 0) + 1
+            
+            for sector, count in sorted(sector_counts.items(), key=lambda x: -x[1]):
+                pct = int(count / len(filtered) * 100) if filtered else 0
+                st.markdown(
+                    f'<div style="display:flex;justify-content:space-between;padding:0.3rem 0;color:#94a3b8;font-size:0.8rem;">'
+                    f'<span>{sector}</span><span style="color:#f472b6;">{count}</span></div>',
+                    unsafe_allow_html=True
+                )
+                st.markdown(
+                    f'<div class="bar-wrap"><div class="bar-fill" style="width:{pct}%;background:#f472b6;"></div></div>',
+                    unsafe_allow_html=True
+                )
         
         divider()
         sec_head("Methodology")
         st.markdown(
             '<div style="color:#64748b;font-size:0.75rem;line-height:1.6;">'
-            '<b>Detection:</b> A stock is flagged if <50% of its MST neighbors share its official sector.<br><br>'
+            '<b>Detection:</b> A stock is flagged if <50% of its MST neighbors share its official sector. '
+            '🟡 Partial matches show some cross-sector connections.<br><br>'
             '<b>Insight:</b> These hidden links reveal market relationships not visible in traditional sector classifications.'
             '</div>',
             unsafe_allow_html=True
@@ -867,7 +901,7 @@ def main():
         tab_insights(cn, prices)
 
     with tab3:
-        tab_anomalies(cn)
+        tab_anomalies(cn, _TOP_N)
 
     with tab4:
         tab_portfolio(cn, prices)
