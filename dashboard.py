@@ -871,7 +871,7 @@ def main():
     compute_time = time.time() - start_time
 
     # ── Header ────────────────────────────────────────────────────────────────
-    st.markdown("## 📊 NepGraph")
+    st.markdown("## ◆ NepGraph")
     st.caption("Nepal Stock Exchange · Minimum Spanning Tree · Louvain Community Detection")
 
     divider()
