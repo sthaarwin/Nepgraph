@@ -3,11 +3,10 @@ import numpy as np
 import os
 import sys
 import time
+import subprocess
 from datetime import date, datetime, timedelta
 
-ROOT_URL = 'https://www.nepalstock.com'
-
-
+NEPSE_DATA_REPO = "git@github.com:Aabishkar2/nepse-data.git"
 
 
 class DataManager:
@@ -31,8 +30,38 @@ class DataManager:
         print("Local data not found or `force_fetch` is True. Fetching from local repo...")
         return self._fetch_from_local_repo(tickers, start_date, end_date)
 
+    def _ensure_nepse_data_repo(self):
+        repo_dir = os.path.join(os.path.dirname(__file__), 'nepse-data')
+        data_dir = os.path.join(repo_dir, 'data', 'company-wise')
+
+        if os.path.isdir(data_dir) and os.listdir(data_dir):
+            return repo_dir
+
+        print("nepse-data repo not found or empty. Cloning...")
+        if os.path.exists(repo_dir):
+            import shutil
+            shutil.rmtree(repo_dir)
+
+        try:
+            subprocess.check_call(
+                ['git', 'clone', NEPSE_DATA_REPO, repo_dir],
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+            )
+            print(f"Cloned nepse-data to {repo_dir}")
+        except subprocess.CalledProcessError as e:
+            print(f"Failed to clone nepse-data: {e}")
+            return None
+
+        return repo_dir
+
     def _fetch_from_local_repo(self, tickers, start_date, end_date):
-        repo_path = os.path.join(os.path.dirname(__file__), 'nepse-data', 'data', 'company-wise')
+        repo_dir = self._ensure_nepse_data_repo()
+        if repo_dir is None:
+            print("Cannot proceed without nepse-data repo.")
+            return self._create_dummy(tickers or [])
+
+        repo_path = os.path.join(repo_dir, 'data', 'company-wise')
         if tickers is None:
             tickers = [f.split('.')[0] for f in os.listdir(repo_path) if f.endswith('.csv')]
             
