@@ -1,0 +1,5 @@
+Observed Q: 0.6609
+Null Mean Q: 0.2956
+Null Std Q: 0.0078
+Z-score: 46.9988
+p-value: 0.0000

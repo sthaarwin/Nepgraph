@@ -1,0 +1,10 @@
+Formal Anomaly Definition (k=5):
+- Out-of-sector neighbor fraction > 0.5
+- Betweenness centrality >= 90th percentile (0.0646)
+
+Detected Anomalies:
+ticker             sector  out_of_sector_fraction  betweenness
+  SHBL  Development Banks                0.800000     0.222578
+   TRH Hotels And Tourism                0.666667     0.130881
+  CHCL        Hydro Power                0.600000     0.120085
+   CIT         Investment                1.000000     0.098227

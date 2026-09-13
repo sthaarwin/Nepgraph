@@ -3,9 +3,10 @@ plan.md
 __pycache__
 *.wasm
 *.csv
-!results/k_sweep_metrics.csv
+!results/*
 lib
 nepse-data
 about.txt
 update_plan.md
 opencode.json
+fix_metrics.py
