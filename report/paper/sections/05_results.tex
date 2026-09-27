@@ -5,12 +5,12 @@
 \label{sec:results-headline}
 
 We now report results on the full NEPSE panel (\emph{max} window,
-$T=\num{5796}$ days, $N=372$ stocks, $k=5$).  The top-$5$ sparsified
+$T=\num{5796}$ days, $N=124$ stocks, $k=5$).  The top-$5$ sparsified
 graph contains $\num{1549}$ edges (density
 $\rho_{\text{edge}}=2|E|/(N(N-1))=\num{0.0225}$); we extract its
-Minimum Spanning Tree for visualisation, which contains $N-1=371$
+Minimum Spanning Tree for visualisation, which contains $N-1=123$
 edges and has the canonical density
-$\rho_{\text{edge}}=2/(N)\approx\SI{0.5}{\percent}$.  Louvain on the
+$\rho_{\text{edge}}=2/(N)\approx\SI{1.6}{\percent}$.  Louvain on the
 top-$5$ graph detects $n_c=7$ communities with modularity
 $Q=0.6609$ (mean $\pm$ std over ten seeds).  The 11
 community sizes, ranked, are
@@ -173,7 +173,7 @@ In summary, topological analysis reveals that NEPSE is not uniform in its commun
 \includegraphics[width=0.85\linewidth]{figures/eigenvector_vs_betweenness.png}
 \caption[Centrality quadrants: eigenvector vs.\ betweenness]{%
 Scatter plot of eigenvector centrality versus betweenness centrality
-for all $N=371$ stocks on the top-$5$ graph ($k=5$, max window).
+for all $N=124$ stocks on the top-$5$ graph ($k=5$, max window).
 Stocks are classified into four quadrants split at the median of each
 metric: \emph{True Hubs} (high on both; systemically important),
 \emph{Bridge Stocks} (high betweenness, low eigenvector; act as
@@ -226,7 +226,7 @@ index (net of 50~bps transaction costs) for three portfolio
 strategies applied to the full NEPSE universe from 2010 through
 the end of the sample (consistent with the stability-plot horizon).
 \emph{Equal-Weight} (EW) is a naive benchmark investing uniformly
-across all $N=372$ stocks; \emph{Community-Based} selects the highest
+across all $N=124$ stocks; \emph{Community-Based} selects the highest
 eigenvector-centrality stock from each detected community (one per
 community); \emph{Sector-Based} selects the highest
 eigenvector-centrality stock from each official NEPSE sector (one per
