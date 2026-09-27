@@ -60,10 +60,10 @@ $L$ the largest-community share.}
 \toprule
 \textbf{Window} & $k^{\star}_w$ & $\bar Q$ & $n_c$ & $L$ (\%) & $|\mathcal{C}|$ & \textbf{Criteria met} \\
 \midrule
-1\,yr (252 d)   & 5 & 0.62  & 10 & 15.0 & 1 & all \\
-3\,yr (756 d)   & 5 & 0.65  & 10 & 14.5 & 1 & all \\
-5\,yr (1\,260 d) & 5 & 0.66  & 10 & 14.0 & 1 & all \\
-\textbf{max (5\,796 d)} & \textbf{5} & \textbf{0.66} & \textbf{7} & \textbf{14.0} & \textbf{1} & \textbf{all} \\
+1\,yr (252 d)   & 3 & 0.697 & 8 & 19.4 & 1 & all \\
+3\,yr (756 d)   & 3 & 0.746 & 8 & 22.9 & 1 & all \\
+5\,yr (1\,260 d) & 3 & 0.744 & 7 & 35.8 & 1 & all \\
+\textbf{max (5\,796 d)} & \textbf{5} & \textbf{0.658} & \textbf{7} & \textbf{27.4} & \textbf{1} & \textbf{all} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -85,7 +85,7 @@ $k$ & $\bar Q$ & $n_c$ & $L$ (\%) & $|\mathcal{C}|$ \\
 2  & 0.71 & --  & --  & \textbf{6} \\
 3  & 0.69 & --  & --  & \textbf{3} \\
 4  & 0.67 & 12 & 15.0 & 1 \\
-\textbf{5}  & \textbf{0.66} & \textbf{7} & \textbf{14.0} & \textbf{1} \\
+\textbf{5}  & \textbf{0.658} & \textbf{7} & \textbf{27.4} & \textbf{1} \\
 6  & 0.65 & 10 & 15.0 & 1 \\
 7  & 0.64 &  9 & 16.5 & 1 \\
 8  & 0.63 &  8 & 18.0 & 1 \\
@@ -98,11 +98,14 @@ $k$ & $\bar Q$ & $n_c$ & $L$ (\%) & $|\mathcal{C}|$ \\
 \end{table}
 
 Tables~\ref{tab:ksweep-optimal} and~\ref{tab:ksweep-max} summarise the
-sweep.  The headline observation is that $k=2$ and $k=3$ (and even
-$k=4$ in some windows) both fragment the \emph{max}-window graph into
-multiple connected components, hence violating criterion~(1).  The
-smallest $k$ that satisfies connectivity across \emph{all} windows is
-$k=5$, and this is our default.
+sweep. As Table~\ref{tab:ksweep-optimal} shows, the shorter windows
+(1yr, 3yr, 5yr) achieve connectivity and high modularity at $k=3$.
+However, the headline observation is that $k=3$ fragments the
+\emph{max}-window graph into 3 disconnected components (violating
+criterion~1). Because we require a globally consistent topological
+framework, we must select the smallest $k$ that satisfies
+connectivity across \emph{all} temporal windows. That threshold is
+$k=5$, which becomes our default.
 
 Figure~\ref{fig:ksweep-modularity} plots $\bar Q$ versus $k$ (panel~A)
 and $n_c$ versus $k$ (panel~B) for each window.  Modularity is
