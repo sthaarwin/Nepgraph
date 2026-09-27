@@ -11,8 +11,8 @@ $\rho_{\text{edge}}=2|E|/(N(N-1))=\num{0.0225}$); we extract its
 Minimum Spanning Tree for visualisation, which contains $N-1=371$
 edges and has the canonical density
 $\rho_{\text{edge}}=2/(N)\approx\SI{0.5}{\percent}$.  Louvain on the
-top-$5$ graph detects $n_c=11$ communities with modularity
-$Q=0.6600\pm 0.0015$ (mean $\pm$ std over ten seeds).  The 11
+top-$5$ graph detects $n_c=7$ communities with modularity
+$Q=0.6609$ (mean $\pm$ std over ten seeds).  The 11
 community sizes, ranked, are
 $\{54, 47, 45, 42, 38, 36, 34, 28, 22, 14, 12\}$ (median $38$, largest
 share \SI{14.5}{\percent}).
@@ -36,11 +36,11 @@ not captured by sector.
 \includegraphics[width=0.85\linewidth]{figures/null_model_modularity.png}
 \caption[Null model modularity validation]{Validation of Louvain
 modularity against a configuration-model null hypothesis.  The observed
-modularity $Q_{\text{obs}}=0.660$ (vertical line) is compared to the
+modularity $Q_{\text{obs}}=0.661$ (vertical line) is compared to the
 distribution of $Q$ values obtained from \num{500} edge-swap
 randomisations of the top-$5$ graph that preserve the degree sequence
 but destroy the weight pattern.  The null distribution yields
-$\bar Q_{\text{null}}=0.280\pm 0.005$, giving a $z$-score of
+$\bar Q_{\text{null}}=0.296\pm 0.008$, giving a $z$-score of
 approximately $76$ and $p<10^{-3}$.  The detected community structure
 is therefore highly statistically significant and not an artefact of
 the network topology.}
@@ -159,7 +159,7 @@ metric: \emph{True Hubs} (high on both; systemically important),
 cross-cluster connectors), \emph{Local Kings} (high eigenvector, low
 betweenness; central within their cluster but not bridging), and
 \emph{Peripheral} (low on both).  The Spearman rank correlation
-between the two centrality measures is $\rho=-0.04$ (essentially
+between the two centrality measures is $\rho \approx 0.08$ (essentially
 uncorrelated), confirming that the two metrics capture distinct
 structural roles: a stock can be a long-corridor connector without
 being central to its own cluster, and vice versa.  The labelled
@@ -177,7 +177,7 @@ Community stability over rolling 1-year windows from 2010 to 2026
 the market structure was still consolidating), measured by Adjusted
 Rand Index (ARI, blue) and Normalized Mutual Information (NMI,
 orange) between consecutive windows.  Both metrics rise from near
-zero in the early years to $\text{ARI}\in[0.4,0.6]$ in the recent
+zero in the early years to $\text{ARI} > 0.7$ in the recent
 windows, indicating that the community structure is non-stationary
 but slowly converging.  The ARI never reaches the high values
 reported for more mature markets~\cite{brida2010dynamical} because
@@ -209,9 +209,9 @@ across all $N=372$ stocks; \emph{Community-Based} selects the highest
 eigenvector-centrality stock from each detected community (one per
 community); \emph{Sector-Based} selects the highest
 eigenvector-centrality stock from each official NEPSE sector (one per
-sector).  Annualised Sharpe ratios are $0.23$ (Community), $0.44$
-(Sector), $0.49$ (EW); annualised returns are $9.3\%$, $13.3\%$,
-$15.5\%$.  We do \emph{not} claim that community-based construction
+sector).  Annualised Sharpe ratios are $0.16$ (Community), $0.15$
+(Sector), $0.33$ (EW); annualised returns are $6.6\%$, $5.5\%$,
+$12.0\%$.  We do \emph{not} claim that community-based construction
 dominates; in this frontier market the equal-weight benchmark offers
 the best risk-adjusted return because idiosyncratic names (which the
 equal-weight scheme over-weights) outperformed on average over the

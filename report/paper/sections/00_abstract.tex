@@ -29,10 +29,10 @@ official sector labels (Adjusted Rand Index $\text{ARI}=0.21$); we
 exploit this divergence as a \emph{sector-mismatch anomaly score} that
 surfaces stocks whose dominant neighbours come from a different official
 sector---candidates for hidden common-factor exposure.  Statistical
-significance is established by an edge-swap null model ($z=82.5$,
+significance is established by an edge-swap null model ($z=47.0$,
 $p<10^{-3}$), temporal stability by rolling 1-year ARI/NMI, and economic
 interpretability by a four-quadrant centrality analysis (Spearman
-$\rho=-0.04$ between eigenvector and betweenness, indicating the two
+$\rho \approx 0.08$ between eigenvector and betweenness, indicating the two
 measures are essentially orthogonal).  A rolling out-of-sample backtest
 (50~bps transaction costs) compares the detected-community baskets
 against sector-based and equal-weight strategies.  All code, raw
