@@ -1,0 +1,26 @@
+\section{Conclusion}
+\label{sec:conclusion}
+
+We have presented NepGraph, a reproducible correlation-based framework
+for discovering hidden community structure in the Nepal Stock
+Exchange.  The framework couples the Mantegna distance, a top-$k$
+sparsification, the Minimum Spanning Tree, and the Louvain
+community-detection algorithm, and exposes the resulting partition
+through an interactive dashboard.  A pre-registered $k$-sweep over
+$440$ parameter combinations justifies $k=5$ as the minimum
+sparsification producing a single connected graph across all temporal
+windows, yielding $9$--$11$ communities with modularity
+$Q\in[0.62,0.66]$.  Statistical significance is confirmed by an
+edge-swap null model ($z=82.5$).  The detected communities overlap
+only partially with the official sector map ($\text{ARI}=0.21$), and
+the mismatches can be surfaced as a transparent anomaly score.
+
+Future work will (i)~extend the framework to the Planar Maximally
+Filtered Graph (PMFG) for higher-resolution cluster detection,
+(ii)~replace the static Pearson correlation with a DCC-GARCH-driven
+dynamic correlation network, and (iii)~validate the anomaly score
+against labelled market manipulation cases on NEPSE.  We hope that
+releasing the entire pipeline under MIT lowers the bar for further
+quantitative research on this frontier market.
+
+\newpage

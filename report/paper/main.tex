@@ -1,0 +1,206 @@
+% NepGraph paper, single-file LaTeX source. Self-contained for Overleaf.
+
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage[margin=2.4cm]{geometry}
+\usepackage{amsmath,amssymb,amsthm,amsfonts,bm,mathtools}
+\usepackage{graphicx,float,booktabs,multirow,array,siunitx,xcolor,colortbl}
+\usepackage{algorithm,algpseudocode}
+\usepackage[colorlinks=true,linkcolor=blue!60!black,
+  citecolor=blue!60!black,urlcolor=blue!60!black,breaklinks=true]{hyperref}
+\usepackage{url,enumitem,microtype,setspace}
+
+\onehalfspacing
+
+\newtheorem{proposition}{Proposition}
+\theoremstyle{definition}
+\newtheorem{definition}{Definition}
+
+\title{%
+  {\Large NepGraph: Revealing Hidden Community Structure\\
+   in the Nepal Stock Exchange via Correlation-Based Graph Methods}\\[0.7em]
+  \large A Reproducible Pipeline for Top-$k$ Sparsification,
+  Louvain Community Detection and Cross-Sector Anomaly Discovery%
+}
+\author{%
+  Nischal Subedi\;\textbar\;Arwin Shrestha\\[0.3em]
+  {\small
+  \href{mailto:nischal1337@gmail.com}{nischal1337@gmail.com}
+  \;\textbar\;
+  \href{mailto:sthaarwin123@gmail.com}{sthaarwin123@gmail.com}}\\[0.2em]
+  \href{https://github.com/sthaarwin/Nepgraph}{github.com/sthaarwin/Nepgraph}%
+}
+\date{\today}
+
+\begin{document}
+\maketitle
+
+\input{sections/00_abstract.tex}
+
+\noindent\textbf{Keywords:}
+financial networks \textbullet\ correlation matrix \textbullet\
+top-$k$ sparsification \textbullet\ Louvain community detection \textbullet\
+market structure \textbullet\ Nepal Stock Exchange \textbullet\ anomaly
+detection.
+
+\newpage
+\input{sections/01_introduction.tex}
+\input{sections/02_related_work.tex}
+\input{sections/03_methodology.tex}
+\input{sections/04_empirical_validation.tex}
+\input{sections/05_results.tex}
+\input{sections/06_discussion.tex}
+\input{sections/07_conclusion.tex}
+\section*{Acknowledgements}
+\addcontentsline{toc}{section}{Acknowledgements}
+We thank the maintainers of the \emph{nepse-data}
+repository~\cite{nepse_data_repo} for the price history, and the
+open-source maintainers of \texttt{NetworkX}, \texttt{python-louvain},
+\texttt{Streamlit} and \texttt{PyVis} for the algorithmic building
+blocks.  We acknowledge use of the Wong (2011) colourblind-safe
+palette for the figures.
+
+\begin{thebibliography}{99}\small
+\setlength{\itemsep}{2pt}\setlength{\parsep}{0pt}
+
+\bibitem{mantegna1999hierarchical} R.~N. Mantegna.\ \newblock
+Hierarchical structure in financial markets.\ \newblock \emph{The
+European Physical Journal B}, 11(1):193--197, 1999.
+
+\bibitem{mantegna1999introduction} R.~N. Mantegna and H.~E. Stanley.\
+\newblock \emph{Introduction to Econophysics: Correlations and
+Complexity in Finance}.\ \newblock Cambridge University Press, 1999.
+
+\bibitem{onnela2003dynamics} J.-P. Onnela, A.~Chakraborti, K.~Kaski,
+and J.~Kert\'esz.\ \newblock Dynamics of market correlations: Taxonomy
+and portfolio analysis.\ \newblock \emph{Physical Review E},
+68(5):056110, 2003.
+
+\bibitem{bonanno2001topology} G.~Bonanno, G.~Caldarelli, F.~Lillo, and
+R.~N. Mantegna.\ \newblock Topology of correlation-based minimal
+spanning trees in real and model markets.\ \newblock \emph{Physical
+Review E}, 68(4):046130, 2003.
+
+\bibitem{tumminello2005tool} M.~Tumminello, T.~Aste, T.~Di~Matteo, and
+R.~N. Mantegna.\ \newblock A tool for filtering information in complex
+financial systems.\ \newblock \emph{Proceedings of the National
+Academy of Sciences}, 102(30):10421--10426, 2005.
+
+\bibitem{newman2003structure} M.~E.~J. Newman.\ \newblock The structure
+and function of complex networks.\ \newblock \emph{SIAM Review},
+45(2):167--256, 2003.
+
+\bibitem{newman2006modularity} M.~E.~J. Newman.\ \newblock Modularity
+and community structure in networks.\ \newblock \emph{Proceedings of
+the National Academy of Sciences}, 103(23):8577--8582, 2006.
+
+\bibitem{blondel2008fast} V.~D. Blondel, J.-L. Guillaume,
+R.~Lambiotte, and E.~Lefebvre.\ \newblock Fast unfolding of communities
+in large networks.\ \newblock \emph{Journal of Statistical Mechanics:
+Theory and Experiment}, 2008(10):P10008, 2008.
+
+\bibitem{kruskal1956shortest} J.~B. Kruskal.\ \newblock On the shortest
+spanning subtree of a graph and the traveling salesman problem.\
+\newblock \emph{Proceedings of the American Mathematical Society},
+7(1):48--50, 1956.
+
+\bibitem{fortunato2007resolution} S.~Fortunato and M.~Barth\'elemy.\
+\newblock Resolution limit in community detection.\ \newblock
+\emph{Proceedings of the National Academy of Sciences},
+104(1):36--41, 2007.
+
+\bibitem{cont2001empirical} R.~Cont.\ \newblock Empirical properties of
+asset returns: Stylised facts and statistical issues.\ \newblock
+\emph{Quantitative Finance}, 1(2):223--236, 2001.
+
+\bibitem{brida2010dynamical} J.~G. Brida and W.~A. Risso.\ \newblock
+Dynamical minimal spanning trees and the dynamical stability of the
+stock market network.\ \newblock \emph{Discrete Dynamics in Nature
+and Society}, 2010:Article ID 394507, 2010.
+
+\bibitem{podosu2013network} D.~Podosu.\ \newblock Network analysis of
+the Romanian stock market.\ \newblock \emph{Theoretical and Applied
+Economics}, 18(11):77--94, 2013.
+
+\bibitem{aste2010correlation} T.~Aste, T.~Di~Matteo, and M.~Tumminello.\
+\newblock Correlation filtering in financial networks.\ \newblock In
+\emph{Proceedings of the Conference on Complex Systems}, 2010.
+
+\bibitem{squartini2018early} T.~Squartini, I.~Van~\hbox{Lint}, and
+S.~Garlaschelli.\ \newblock Early-warning signals of topological
+collapse in interbank networks.\ \newblock \emph{Scientific Reports},
+8:5569, 2018.
+
+\bibitem{bardoscia2015guide} M.~Bardoscia, S.~Battiston, A.~Caccioli,
+and G.~Caldarelli.\ \newblock DebtRank: A microscopic foundation for
+shock propagation.\ \newblock \emph{PLoS ONE}, 10(6):e0130406, 2015.
+
+\bibitem{fiedor2014information} P.~Fiedor.\ \newblock
+Information-theoretic approach to lead-lag effect on financial
+markets.\ \newblock \emph{Physical Review E}, 89(5):052801, 2014.
+
+\bibitem{lillo2002econophysics} F.~Lillo and R.~N. Mantegna.\
+\newblock Variety and order in financial markets.\ \newblock \emph{arXiv
+preprint cond-mat/0204420}, 2002.
+
+\bibitem{hubert1985part} L.~Hubert and P.~Arabie.\ \newblock Comparing
+partitions.\ \newblock \emph{Journal of Classification},
+2(1):193--218, 1985.
+
+\bibitem{nepse_data_repo} A.~Karmacharya.\ \newblock \emph{nepse-data:
+Historical price data for the Nepal Stock Exchange}.\ \newblock GitHub
+repository.\ \url{https://github.com/Aabishkar2/nepse-data}.
+
+\bibitem{neepse_website} Nepal Stock Exchange Ltd.\ \newblock
+\emph{Sector-wise listed companies}.\ \newblock
+\url{https://www.nepalstock.com.np/}, accessed 2026-09-13.
+
+\bibitem{wong2011points} B.~Wong.\ \newblock Points of view: Color
+blindness.\ \newblock \emph{Nature Methods}, 8(6):441, 2011.
+
+\end{thebibliography}
+
+\appendix
+\newpage
+\section*{Appendix A: File Layout}
+\addcontentsline{toc}{section}{Appendix A: File Layout}
+\begin{verbatim}
+Nepgraph/
+|-- dashboard.py                Streamlit UI
+|-- graph/network.py            CorrelationNetwork: MST, Louvain, ...
+|-- data/data_manager.py        DataManager: load / fetch NEPSE prices
+|-- data/sector_map.py          NEPSE_SECTORS: 13 sectors, 372 tickers
+|-- data/nepse_prices.csv       Daily closes, 1995-07-20 onwards
+|-- analysis/k_sweep.py         440-run parameter sweep
+|-- analysis/null_model.py      Edge-swap null model
+|-- analysis/stability.py       Rolling 1-year ARI/NMI
+|-- analysis/centrality_comparison.py
+|-- analysis/portfolio_backtest.py
+|-- analysis/anomaly_definition.py
+|-- results/                    CSVs and summary metrics
+|-- figures/                    PNGs (7)
+`-- paper/                      Self-contained Overleaf drop-in
+    |-- main.tex                This document
+    |-- README.md               Overleaf instructions
+    `-- figures/                Mirror of ../figures/
+\end{verbatim}
+
+\newpage
+\section*{Appendix B: Reproducing the Full Pipeline}
+\addcontentsline{toc}{section}{Appendix B: Reproducing the Full Pipeline}
+\begin{verbatim}
+git clone https://github.com/sthaarwin/Nepgraph.git
+cd Nepgraph && pip install -r requirements.txt
+python analysis/k_sweep.py
+python analysis/null_model.py
+python analysis/stability.py
+python analysis/centrality_comparison.py
+python analysis/portfolio_backtest.py
+python analysis/anomaly_definition.py
+streamlit run dashboard.py      # http://localhost:8501
+\end{verbatim}
+
+\end{document}

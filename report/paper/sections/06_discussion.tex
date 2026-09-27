@@ -1,0 +1,132 @@
+\section{Discussion}
+\label{sec:discussion}
+
+\subsection{Methodological Caveats}
+\label{sec:discussion-caveats}
+
+\begin{enumerate}
+  \item \textbf{Pearson vs.\ rank correlations.} The pipeline currently
+  uses Pearson correlation, which is sensitive to outliers and to
+  non-Gaussian marginals.  Spearman rank correlation is offered in
+  the code; results are qualitatively similar but the community
+  partition differs in detail.
+
+  \item \textbf{Choice of distance.} The Mantegna distance
+  \eqref{eq:mantegna} is the de-facto standard in the financial-network
+  literature but is not the only choice.  Alternative metrics such as
+  the angular (cosine) distance used by the PMFG literature or the
+  log-distance $d_{ij}=-\ln|\rho_{ij}|$ yield different topologies;
+  we have not performed a head-to-head comparison and leave it for
+  future work.
+
+  \item \textbf{Louvain non-determinism.} The Louvain algorithm is
+  stochastic~\cite{blondel2008fast}.  Our $k$-sweep reports
+  $\bar Q \pm \sigma_Q$ across ten seeds and the operational code
+  averages three deterministic seeds; we recommend that any downstream
+  use of the partition for trading signal generation be re-seeded at
+  every re-fit.
+
+  \item \textbf{Modularity resolution limit.} Modularity maximisation
+  has a well-known resolution limit~\cite{fortunato2007resolution}: it
+  tends to merge small, closely-related communities.  The drop from
+  $16$ to $6$ communities as $k$ grows from $2$ to $20$
+  (Figure~\ref{fig:ksweep-modularity}B) is partly attributable to
+  this, not to a real absence of structure.
+
+  \item \textbf{Stationarity.} The Pearson correlation assumes a
+  stationary covariance structure over the window.  The
+  \emph{lookback} toggle ($1$/$3$/$5$/\emph{max} years) allows the
+  user to probe the sensitivity of the partition to this assumption;
+  the longer windows tend to be dominated by long-run co-movement, the
+  shorter by recent regime dynamics.
+\end{enumerate}
+
+\subsection{Current Limitations}
+\label{sec:discussion-limitations}
+
+Beyond the methodological caveats of Section~\ref{sec:discussion-caveats},
+we acknowledge four practical limitations of the present study that any
+downstream user of the framework should bear in mind.
+\begin{itemize}
+  \item \textbf{Survivorship bias.}  The dataset comprises only stocks
+  that \emph{survived} to the present day; bankrupt, suspended, and
+  delisted companies are absent.  Consequently the portfolio
+  backtest of Section~\ref{sec:results-portfolio} benefits slightly
+  from hindsight, because the realised equity curve is constructed on
+  a survivor-only universe rather than the universe of stocks that
+  traded at each historical date.  A fully survivorship-bias-free
+  treatment would require delisting-event data with the historical
+  reason for exit, which is not uniformly available for NEPSE prior
+  to 2010.
+
+  \item \textbf{Illiquidity and zero-return bias.}  NEPSE is a
+  frontier market in which many micro-cap stocks trade on a small
+  fraction of all sessions.  Our missing-data policy of
+  forward-filling the last observed price on non-trading days produces
+  strings of exactly zero log returns.  Two highly illiquid tickers
+  will exhibit near-zero recentred returns simultaneously and hence
+  carry an artificially inflated Pearson correlation---a known
+  artefact of zero-return filling in illiquid universes.  Practitioners
+  should treat the correlation matrix as a \emph{lower bound} on the
+  genuine covariance, and treat the resulting anomaly score $\eta$ as
+  conservative.
+
+  \item \textbf{Macro-stationarity.}  Compressing almost 23~years of
+  data into a single \emph{max}-window correlation graph implicitly
+  assumes that pairwise stock relationships are static across the
+  sample.  In reality, NEPSE's regulatory regime has shifted through
+  major episodes (NRB capital-hike policies, hydro-power IPP
+  regime changes, the 2015 trade blockade, the 2020 pandemic shock),
+  any of which can rearrange the correlation structure at the
+  portfolio level.  We partially mitigate this in
+  Section~\ref{fig:community-stability} via the rolling 1-year ARI
+  / NMI stability test, which exposes non-stationarity explicitly,
+  but the headline \emph{max}-window graph still compresses decades of
+  macroeconomic regime-shifts into a single partition.
+
+  \item \textbf{Market impact and slippage.}  The backtest of
+  Section~\ref{sec:results-portfolio} assumes a flat 50~bps per-side
+  transaction cost.  In reality, rebalancing a portfolio into thinly
+  traded NEPSE names would interact with the order book's depth and
+  produce significant price impact, especially in low-capitalisation
+  segments.  Reported excess returns over the equal-weight benchmark
+  are therefore an \emph{upper bound} on what a real trader could
+  realise; practical execution would erode them by an unknown amount
+  that depends on portfolio size and order-routing strategy.
+\end{itemize}
+
+\subsection{Practical Implications}
+\label{sec:discussion-implications}
+
+The community partition produced by NepGraph is a data-driven
+complement to NEPSE's official sector taxonomy.  We see three concrete
+use cases:
+\begin{itemize}
+  \item \textbf{Risk management.} A portfolio concentrated in a single
+  detected community is exposed to a single common factor, even when
+  the constituents span multiple official sectors.  The diversification
+  score $\Delta$ is a one-number summary of this exposure.
+
+  \item \textbf{Surveillance.} The anomaly score $\eta$ flags
+  cross-sector MST links that may indicate coordinated price
+  movement, contagion channels, or regulatory arbitrage.  We
+  deliberately do \emph{not} claim that all flagged stocks are involved
+  in market manipulation; we provide a list of candidates that
+  warrants further qualitative investigation.
+
+  \item \textbf{Index construction.} The detected communities can be
+  used to construct \emph{de-correlated} equal-weight baskets, which
+  the dashboard exposes via the backtest tab.
+\end{itemize}
+
+\subsection{Reproducibility}
+\label{sec:discussion-reproducibility}
+
+All code is open-source (MIT).  The $k$-sweep requires only the
+bundled \texttt{nepse\_prices.csv} (~12\,MB) and runs in under five
+minutes on a laptop.  The dashboard can be started with
+\texttt{streamlit\ run\ dashboard.py} and updates the underlying MST,
+Louvain partition and anomaly list interactively as the user toggles
+the lookback or the top-$k$ slider.
+
+\newpage

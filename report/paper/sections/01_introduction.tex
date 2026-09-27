@@ -1,0 +1,86 @@
+\section{Introduction}
+
+\subsection{Motivation}
+\label{sec:motivation}
+
+The Nepal Stock Exchange (NEPSE) is a small, structurally thin emerging
+market with 372 actively traded equities, thirteen official sector
+taxonomies, and a combined capitalisation that is dominated by commercial
+banks and hydro-power issuers.  Despite three decades of trading
+history---our dataset begins 6 June 2003 and continues to
+24 April 2026---research-grade quantitative analysis of
+NEPSE remains sparse relative to mature Asian peers (BSE, NSE, SET, IDX).
+Most published work on the exchange relies on sectoral decomposition as
+the primary organising principle for diversification and risk analysis.
+Yet, as the broader financial-network literature has long argued,
+official sector labels are an administrative artefact that captures only
+a fraction of the true covariance structure of
+returns~\cite{bonanno2001topology, mantegna1999hierarchical, onnela2003dynamics,
+podosu2013network}.
+
+A long line of research---originating with Mantegna's seminal work on
+hierarchical structure in financial
+markets~\cite{mantegna1999hierarchical} and extended through Mantegna and
+Stanley's \emph{An Introduction to
+Econophysics}~\cite{mantegna1999introduction}---shows that the
+\emph{correlation matrix of returns} encodes a richly organised structure
+that is not visible in sector labels.  Pearson correlations can be lifted
+to a metric space via $d_{ij}=\sqrt{2(1-\rho_{ij})}$, the
+\emph{Mantegna distance}~\cite{mantegna1999hierarchical,onnela2003dynamics},
+which is provably Euclidean and admits a Minimum Spanning Tree (MST)
+sparsification~\cite{kruskal1956shortest} that retains the market's
+skeletal topology while discarding the noise of weakly correlated pairs.
+The MST is a particularly attractive object because, with $N-1$ edges
+over $N$ nodes, it is the unique connected, acyclic, and dense-enough
+summary of pairwise similarities that is suitable for community
+detection on a small graph.
+
+\subsection{Contributions}
+\label{sec:contributions}
+
+This paper accompanies and documents \textbf{NepGraph}, a fully
+reproducible analytical framework that ports the correlation-network
+methodology of Mantegna, Onnela and Tumminello to the NEPSE universe,
+validates the sparsification parameter empirically, and exposes the
+resulting structure through an interactive dashboard.
+
+Our contributions are four-fold:
+\begin{enumerate}
+  \item \textbf{Pipeline.} We describe a complete, open-source pipeline
+  from raw daily NEPSE close prices to an interactive minimum-spanning-tree
+  visualisation, Louvain community partition, anomaly report, portfolio
+  diversification score and equal-weight backtest.
+
+  \item \textbf{Empirical parameter selection.} We perform a
+  pre-registered $k$-sweep (Section~\ref{sec:ksweep}) over
+  \num{440} parameter combinations to justify the choice of $k=5$
+  neighbours per node in the top-$k$ graph.  Although $k=3$ slightly
+  outperforms $k=5$ on the headline modularity metric, it fragments the
+  network into disconnected islands, which means global topology
+  metrics like betweenness centrality break down.  We argue that a
+  single, connected backbone is a prerequisite for global analysis, and
+  we therefore adopt the minimum $k$ that delivers it: $k=5$.
+
+  \item \textbf{Sector-mismatch anomaly score.} We define an anomaly as
+  a stock whose top-$k$ MST neighbours are dominated by a sector
+  different from its official NEPSE classification, and demonstrate that
+  this yields interpretable cross-sector signals (e.g.\ hydro-power
+  equities co-moving with insurance issuers) that are invisible to the
+  official taxonomy.
+
+  \item \textbf{Open release.} The full code, raw $k$-sweep metrics,
+  pre-rendered figures, NEPSE sector map, and analysis scripts are
+  released under MIT at \url{https://github.com/sthaarwin/Nepgraph}.
+\end{enumerate}
+
+\subsection{Outline}
+The remainder of the paper is organised as follows.
+Section~\ref{sec:related} situates the work in the financial-network
+literature.  Section~\ref{sec:method} formalises the methodology.
+Section~\ref{sec:ksweep} presents the empirical $k$-sweep that calibrates
+the sparsification parameter.  Section~\ref{sec:results} reports headline
+results on the full NEPSE universe.
+Section~\ref{sec:discussion} discusses limitations, applications and
+threats to validity.  Section~\ref{sec:conclusion} concludes.
+
+\newpage

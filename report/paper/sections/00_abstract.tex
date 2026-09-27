@@ -1,0 +1,40 @@
+\begin{abstract}
+\noindent
+We present \textbf{NepGraph}, an open-source analytical framework for
+discovering organised market structure in the Nepal Stock Exchange (NEPSE)
+from historical price data alone.  The pipeline transforms daily closing
+prices into log returns, builds a Pearson correlation matrix over a
+372-instrument universe spanning June 2003 to April 2026 (almost
+23~years of NEPSE history), converts that matrix into a distance metric
+$d_{ij}=\sqrt{2(1-\rho_{ij})}$, sparsifies via a top-$k$
+nearest-neighbour graph, and applies the Louvain modularity-maximisation
+algorithm on the resulting graph to identify hidden communities.  A
+central methodological contribution is a pre-registered $k$-sweep over
+\num{440} parameter combinations (eleven values of $k\in\{2,\dots,20\}$,
+four temporal windows, ten Louvain seeds) that empirically justifies
+$k=5$ as the \emph{minimum} sparsification that keeps the entire NEPSE
+universe connected as a single graph.  While smaller sparsifications
+(notably $k=2$ and $k=3$) yield a slightly higher headline modularity
+score, they fragment the graph into multiple disconnected
+\emph{islands} of stocks, which breaks down global topology metrics such
+as betweenness centrality: one cannot measure a stock's ability to act
+as a bridge between communities if there is, by construction, no path
+between those communities in the first place.  Choosing $k=5$ therefore
+represents the exact mathematical \emph{sweet spot}---the minimum
+threshold required to keep the market connected as a single graph while
+still maintaining high modularity ($Q=0.66$) and avoiding the
+over-connected \emph{hairball} that larger $k$ values would produce.
+The detected communities overlap only partially with NEPSE's thirteen
+official sector labels (Adjusted Rand Index $\text{ARI}=0.21$); we
+exploit this divergence as a \emph{sector-mismatch anomaly score} that
+surfaces stocks whose dominant neighbours come from a different official
+sector---candidates for hidden common-factor exposure.  Statistical
+significance is established by an edge-swap null model ($z=82.5$,
+$p<10^{-3}$), temporal stability by rolling 1-year ARI/NMI, and economic
+interpretability by a four-quadrant centrality analysis (Spearman
+$\rho=-0.04$ between eigenvector and betweenness, indicating the two
+measures are essentially orthogonal).  A rolling out-of-sample backtest
+(50~bps transaction costs) compares the detected-community baskets
+against sector-based and equal-weight strategies.  All code, raw
+metrics, and figures are released under MIT.
+\end{abstract}

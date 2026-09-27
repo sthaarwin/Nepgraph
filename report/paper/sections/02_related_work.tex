@@ -1,0 +1,52 @@
+\section{Related Work}
+\label{sec:related}
+
+The application of complex-network theory to financial markets traces to
+Mantegna~\cite{mantegna1999hierarchical}, who showed that the MST of an
+equity-correlation matrix reveals a hierarchical market structure
+dominated by industry classification, and to Mantegna and Stanley's
+\emph{econophysics}~\cite{mantegna1999introduction} framing of
+cross-asset co-movement.  Bonanno et~al.~\cite{bonanno2001topology}
+confirmed that the MST length distribution across time contains
+predictive information about regime shifts, while Onnela, Chakraborti,
+Kaski and Kert\'esz~\cite{onnela2003dynamics} demonstrated that the
+dynamics of market correlations exhibit scale-free clustering on the MST.
+Tumminello, Aste, Di~Matteo and
+Mantegna~\cite{tumminello2005tool} generalised this framework into a tool
+that recovers correlation-based networks at multiple time scales via the
+Planar Maximally Filtered Graph (PMFG).
+
+A complementary strand investigates the empirical deficiencies of the
+MST and PMFG as sparse approximations: Aste, Di~Matteo and
+Tumminello~\cite{aste2010correlation} showed that the information content
+of correlation filtering depends strongly on the topology of the backbone.
+Squartini, Van~\hbox{Lint} and
+Garlaschelli~\cite{squartini2018early} used MST and PMFG networks as
+inputs to early-warning signals for systemic risk in interbank networks.
+On the community-detection side,
+Newman~\cite{newman2003structure,newman2006modularity} introduced the
+modularity-$Q$ objective that we adopt here, and Blondel, Guillaume,
+Lambiotte and Lefebvre~\cite{blondel2008fast} introduced the greedy
+modularity-maximisation algorithm widely known as Louvain, which scales
+gracefully to networks with millions of edges and is the algorithm we
+deploy on the top-$k$ graph.
+
+Methodologically, our contribution is closest to Brida and
+Risso~\cite{brida2010dynamical}, who applied the MST+Louvain framework
+to the Latin-American Integrated Market (MILA), and to
+Podosu~\cite{podosu2013network}, who applied it to the Romanian BET.
+NepGraph extends this line to NEPSE and, unlike these studies, performs
+an explicit \emph{pre-registered} $k$-sweep that calibrates the top-$k$
+sparsification parameter from data, rather than adopting it heuristically.
+
+A parallel literature develops topology-based anomaly detection on
+correlation networks~\cite{fiedor2014information, bardoscia2015guide,
+lillo2002econophysics}.  NepGraph contributes to this strand by defining
+a simple, transparent sector-mismatch anomaly score on top of the
+Louvain partition.  The score is deliberately conservative: it requires
+a minimum of $50\%$ of the top-$k$ MST neighbours to come from a
+different official sector before flagging, which keeps the
+false-positive rate low while surfacing the most economically
+interesting cross-sector links.
+
+\newpage

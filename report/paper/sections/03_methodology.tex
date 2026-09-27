@@ -1,0 +1,170 @@
+\section{Methodology}
+\label{sec:method}
+
+\subsection{Data}
+\label{sec:data}
+
+We obtain daily closing prices for all NEPSE-listed equities from the
+community-maintained \emph{nepse-data}
+repository~\cite{nepse_data_repo}.  After dropping tickers with more
+than \SI{40}{\percent} missing observations across the sample and
+forward/backward-filling remaining gaps, we retain a universe of
+$N=372$ stocks spanning almost 23 years of NEPSE trading history (6 June
+2003 through 24 April 2026, $T=\num{5796}$ trading days).  Each
+ticker is annotated with one of thirteen official NEPSE
+sectors~\cite{neepse_website}: Commercial Banks, Development Banks,
+Finance Companies, Hydro Power, Manufacturing \& Processing, Hotels
+\& Tourism, Trading, Mutual Fund, Microfinance, Life Insurance,
+Non-Life Insurance, Investment, and Others.
+
+\subsection{Log Returns}
+\label{sec:returns}
+
+For a price panel $\bm{P}\in\mathbb{R}^{T\times N}$ with columns
+$\bm{P}^{(j)}=(P_1^{(j)},\dots,P_T^{(j)})$, the daily log return of
+stock $j$ is
+\begin{equation}
+  r_t^{(j)} \;=\; \ln\frac{P_t^{(j)}}{P_{t-1}^{(j)}},
+  \qquad t=2,\dots,T.
+  \label{eq:logret}
+\end{equation}
+Log returns are additive in time, approximately Gaussian at short
+horizons, and the standard input for correlation-based network
+analysis~\cite{mantegna1999introduction, cont2001empirical}.
+
+\subsection{Pearson Correlation Matrix}
+\label{sec:corr}
+
+For two stocks $i,j$ with log-return series $\bm{r}^{(i)},\bm{r}^{(j)}$,
+we compute the Pearson correlation
+\begin{equation}
+  \rho_{ij}
+  \;=\;
+  \frac{\text{Cov}\bigl(\bm{r}^{(i)},\bm{r}^{(j)}\bigr)}
+       {\sigma_i \sigma_j}
+  \;\in [-1, 1],
+  \label{eq:pearson}
+\end{equation}
+yielding the symmetric matrix $\bm{\rho}\in[-1,1]^{N\times N}$ with
+unit diagonal.  Spearman rank correlation is offered as a drop-in
+alternative in the implementation; the headline results use Pearson.
+
+\subsection{Top-$k$ Sparsification and MST Distance}
+\label{sec:mst}
+
+The complete correlation graph with $N(N-1)/2$ edges is dense and
+noise-prone.  We sparsify in two stages.
+
+\paragraph{Top-$k$ graph.}
+For each node $i$, retain only edges to its $k$ most-correlated
+neighbours (measured by $|\rho_{ij}|$), then take the symmetric union.
+This produces a sparse undirected graph $\mathcal{G}_k$ with at most
+$kN/2$ edges.  The choice of $k$ is a hyper-parameter; we calibrate
+it empirically in Section~\ref{sec:ksweep}.
+
+\paragraph{MST distance.}
+Following Mantegna~\cite{mantegna1999hierarchical} and Onnela
+et~al.~\cite{onnela2003dynamics}, we convert correlations to a
+dissimilarity using the \emph{Mantegna distance}
+\begin{equation}
+  d_{ij} \;=\; \sqrt{2\,(1-\rho_{ij})},
+  \qquad
+  d_{ij}\in[0,2].
+  \label{eq:mantegna}
+\end{equation}
+$d_{ij}$ satisfies the axioms of an ultrametric-free metric on
+$\mathbb{R}^N$ and admits a Euclidean embedding, which is what makes
+the MST a well-defined object on top of correlations.
+
+\begin{proposition}[Euclidean embedding of $d_{ij}$]
+The matrix $\bm{D}=(d_{ij})_{i,j=1}^N$ with entries given by
+\eqref{eq:mantegna} admits a Euclidean embedding: there exists vectors
+$\bm{x}_1,\dots,\bm{x}_N\in\mathbb{R}^N$ such that
+$\lVert\bm{x}_i-\bm{x}_j\rVert_2 = d_{ij}$ for all $i,j$.
+\end{proposition}
+\begin{proof}
+This is a classical result: $d_{ij}=\sqrt{2-2\rho_{ij}}$ equals
+$\sqrt{(\bm{c}_i-\bm{c}_j)^{\!\top}(\bm{c}_i-\bm{c}_j)}$ where $\bm{c}_i$
+is the $i$-th column of any symmetric square root of $\bm{\rho}$.
+Since $\bm{\rho}$ is positive semi-definite by construction, such a
+root exists.  See Mantegna and
+Stanley~\cite[Ch.~3]{mantegna1999introduction}.
+\end{proof}
+
+\paragraph{MST extraction.}
+We compute the MST of the complete graph on $\mathcal{V}=\{1,\dots,N\}$
+with edge weights $d_{ij}$ using Kruskal's
+algorithm~\cite{kruskal1956shortest}.  The MST is the unique connected,
+acyclic graph with $N-1$ edges that minimises the sum of edge weights,
+and is the canonical sparsification for financial
+networks~\cite{bonanno2001topology, aste2010correlation}.
+
+\subsection{Louvain Community Detection}
+\label{sec:louvain}
+
+We partition the top-$k$ correlation graph $\mathcal{G}_k$ into
+communities using the Louvain algorithm~\cite{blondel2008fast}, which
+iteratively maximises \emph{Newman's
+modularity}~\cite{newman2006modularity}
+\begin{equation}
+  Q \;=\;
+  \frac{1}{2m}\sum_{i,j}
+  \Bigl(A_{ij}-\tfrac{k_i k_j}{2m}\Bigr)
+  \,\mathbb{1}\{c_i=c_j\},
+  \label{eq:modularity}
+\end{equation}
+where $A_{ij}$ is the adjacency, $k_i=\sum_j A_{ij}$ the degree of
+node $i$, $m=\tfrac{1}{2}\sum_{i,j} A_{ij}$ the total edge weight, and
+$c_i$ the community label of $i$.  Louvain runs in near-linear time
+and is robust to initialisation across our pre-registered seed range
+(see Section~\ref{sec:ksweep}).
+
+\subsection{Centrality}
+\label{sec:centrality}
+
+For interpretability, we compute four classical centrality
+measures~\cite{newman2003structure} on the top-$k$ graph: degree,
+betweenness, closeness, and eigenvector centrality.  Eigenvector
+centrality is used to size the nodes in the network visualisation;
+betweenness highlights stocks that sit on the longest shortest paths
+and frequently act as bridges between sub-communities.
+
+\subsection{Anomaly Score}
+\label{sec:anomaly}
+
+Define for each ticker $v$ with official sector $s(v)$ and MST-neighbour
+set $\mathcal{N}_k(v)$ of size $k$, the \emph{sector-match ratio}
+\begin{equation}
+  \eta(v) \;=\;
+  \frac{1}{k}\sum_{u\in\mathcal{N}_k(v)}
+    \mathbb{1}\{s(u)=s(v)\}.
+  \label{eq:etadef}
+\end{equation}
+A ticker is flagged as an \emph{anomaly} when $\eta(v)<\tau$ with
+$\tau=0.50$ by default and $s(v)\ne\text{Unknown}$.  Intuitively,
+fewer than half of the ticker's closest MST neighbours share its
+official sector.  The chosen $\tau$ trades off false positives (a
+stock mis-classified by NEPSE) against false negatives (a stock with
+genuinely diversified co-movement).
+
+\subsection{Pipeline Summary}
+\label{sec:pipeline-summary}
+
+\begin{algorithm}[H]
+\caption{NepGraph pipeline (per lookback window)}
+\label{alg:pipeline}
+\begin{algorithmic}[1]
+\Require price panel $\bm{P}\in\mathbb{R}^{T\times N}$, sector map $s(\cdot)$, $k$
+\State Drop columns with $>40\%$ missing observations in window.
+\State Compute log returns $\bm{r}_t$ via~\eqref{eq:logret}; dropna.
+\State Compute correlation matrix $\bm{\rho}$ via~\eqref{eq:pearson}.
+\State Build Mantegna distance matrix $d_{ij}$ via~\eqref{eq:mantegna}.
+\State Build top-$k$ graph $\mathcal{G}_k$.
+\State Run Louvain on $\mathcal{G}_k$ with seed $\xi$; obtain partition $\{c_i\}_{i=1}^N$.
+\State Compute modularity $Q$ via~\eqref{eq:modularity}.
+\State Compute centralities and per-ticker anomaly score $\eta$ via~\eqref{eq:etadef}.
+\State Render dashboard tabs: Network, Insights, Anomaly, Portfolio.
+\end{algorithmic}
+\end{algorithm}
+
+\newpage
