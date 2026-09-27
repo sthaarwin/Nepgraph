@@ -63,7 +63,7 @@ $L$ the largest-community share.}
 1\,yr (252 d)   & 5 & 0.62  & 10 & 15.0 & 1 & all \\
 3\,yr (756 d)   & 5 & 0.65  & 10 & 14.5 & 1 & all \\
 5\,yr (1\,260 d) & 5 & 0.66  & 10 & 14.0 & 1 & all \\
-\textbf{max (5\,796 d)} & \textbf{5} & \textbf{0.66} & \textbf{11} & \textbf{14.0} & \textbf{1} & \textbf{all} \\
+\textbf{max (5\,796 d)} & \textbf{5} & \textbf{0.66} & \textbf{7} & \textbf{14.0} & \textbf{1} & \textbf{all} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -85,7 +85,7 @@ $k$ & $\bar Q$ & $n_c$ & $L$ (\%) & $|\mathcal{C}|$ \\
 2  & 0.71 & --  & --  & \textbf{6} \\
 3  & 0.69 & --  & --  & \textbf{3} \\
 4  & 0.67 & 12 & 15.0 & 1 \\
-\textbf{5}  & \textbf{0.66} & \textbf{11} & \textbf{14.0} & \textbf{1} \\
+\textbf{5}  & \textbf{0.66} & \textbf{7} & \textbf{14.0} & \textbf{1} \\
 6  & 0.65 & 10 & 15.0 & 1 \\
 7  & 0.64 &  9 & 16.5 & 1 \\
 8  & 0.63 &  8 & 18.0 & 1 \\
@@ -140,7 +140,7 @@ graph across all windows.}
 \caption[Community size distribution for $k\in\{4,5,8,15\}$]{%
 Community size distribution under the \emph{max} window for
 $k\in\{4,5,8,15\}$.  At $k=5$ the graph is connected and the
-Louvain partition contains $11$ communities with the largest
+Louvain partition contains $7$ communities with the largest
 accounting for \SI{14.0}{\percent} of nodes.  As $k$ grows the
 partition coarsens into six giant communities at $k=20$.}
 \label{fig:ksweep-community-dist}
@@ -163,7 +163,7 @@ for the dashboard's visualisation, anomaly reporting, and
 portfolio-diversification scoring, and we therefore prefer a slightly
 coarser partition that is globally interpretable over a marginally
 tighter partition that is not.  At $k=5$, $\bar Q\in[0.62, 0.66]$ with
-$9$--$11$ communities and a largest community never exceeding
+$7$ communities and a largest community never exceeding
 \SI{17}{\percent} of nodes.
 
 We do not recommend $k<5$ as a default: $k=2$ and $k=3$ both fragment
