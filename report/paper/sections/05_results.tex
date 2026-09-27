@@ -87,6 +87,27 @@ The community detection algorithm does not simply group stocks into their offici
 \end{itemize}
 This sub-sector fracturing proves that the correlation network topology successfully detects independently co-moving clusters that are otherwise obscured by broad official classifications.
 
+
+\begin{table}[H]
+\centering
+\footnotesize
+\caption{Summary of detected communities ($k=5$, max window). For each community, we report its size, the dominant official sector (with purity percentage), and the key structural nodes (True Hubs and Bridge Stocks). Note how the Hydro Power sector fractures into Communities 1 and 2, and Life Insurance fractures into Communities 0 and 3.}
+\label{tab:community_summary}
+\begin{tabular}{r r l p{3.5cm} p{3.5cm}}
+\toprule
+\textbf{ID} & \textbf{Size} & \textbf{Dominant Sector} & \textbf{True Hubs} & \textbf{Bridge Stocks} \\
+\midrule
+0 & 5 & Life Insurance (100.0\%) & ULI & JLI \\
+1 & 34 & Hydro Power (100.0\%) & UPCL, HDHPC, UNHPL, MHNL, UMHL, SPDL, AKPL, API, SJCL, HIDCL, SHPC, RRHP, BPCL, RHPC & CHCL \\
+2 & 17 & Hydro Power (70.6\%) & SSHL, GLH, UMRH, NIFRA, SHEL, CGH, NRN, SAHAS, RURU, NABBC, TPC & -- \\
+3 & 8 & Life Insurance (87.5\%) & -- & CIT, NLIC, ALICL, PLIC \\
+4 & 15 & Finance Companies (100.0\%) & NFS & BFC, MFIL, PROFL, RLFL, CFCL \\
+5 & 26 & Commercial Banks (96.2\%) & -- & PRVU, NMB, KBL, PCBL, NICA, SANIMA, SBL, CBL, BOKL, NBL, SRBL, NIB, MEGA \\
+6 & 19 & Development Banks (73.7\%) & KSBBL, LBBL, MLBL, SHL, TRH, SAPDBL & SHINE, JBBL, GBBL, GRDBL, MNBBL, EDBL, SHBL \\
+\bottomrule
+\end{tabular}
+\end{table}
+
 \subsection{Anomalies}
 \label{sec:results-anomalies}
 
